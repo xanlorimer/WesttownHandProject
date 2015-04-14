@@ -5,4 +5,4 @@ The main hand code isn't tested as of right now, but the tested servo code (hand
 
 multiEMGTest might work, but it's untested.
 
-Processing probably doesn't work with the old servo code (handCodeServo.ino), but it might. Untested.'
+Processing probably doesn't work with the old servo code (handCodeServo.ino), but it might. Untested.
