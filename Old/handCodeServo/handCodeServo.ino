@@ -7,11 +7,14 @@
 // Programmed by Xan Lorimer (xanlorimer@gmail.com)
 // This code is published under the GNU GPL v2 license.
 
+////////////////////////////////////////////////////////////////////////////////////////
+// THIS CODE ISN'T COMPLETELY TESTED AS OF 4/22/15. TESTED TO COMPILATION BUT NO MORE //
+////////////////////////////////////////////////////////////////////////////////////////
+
 #include <Servo.h>
 
 // Let's declare our variables below, and initialize a few things:
 String inputString = ""; // A string to hold incoming data
-boolean stringComplete = false; // Is the string complete?
 char inChar; // Input character for commands.
 
 int inputInt; // Initialize...
@@ -82,43 +85,39 @@ void serialEvent() // Whenever new data comes in on the Arduino
       inputString += inChar; // Add the character to the string
     }
     
-    if (inChar == '\n') // Set the flag if the character is a newline 
+    if (inChar == '\n') // If newline, call cmdHandler 
     { 
-      stringComplete = true;
       Serial.println(inputString);
-      cmdHandler(inputString,stringComplete);
+      cmdHandler(inputString);
       inputString = "";
     } 
   }
 }
 
 // This method handles commands
-void cmdHandler(String inputString, boolean stringComplete) 
+void cmdHandler(String inputString) 
 { 
-  if (stringComplete) 
-  {
-    Serial.println("Command recieved: " +inputString); 
-      if(inputString.equalsIgnoreCase("ASET")) 
-      {
-          angleSet();
-      }
-      if(inputString.equalsIgnoreCase("OPEN")) 
-      {
-          openHandInstant();
-      }
-      if(inputString.equalsIgnoreCase("SHUT")) 
-      {
-          shutHandInstant();
-      }
-      else 
-      {
-        Serial.println("Unknown Command. Options: ASET, OPEN, SHUT."); //Handle unknown commands
-      }
-
-    inputString = ""; // Then we clear the string
-    stringComplete = false; // And we set this flag to false once again.
-  }
+  Serial.println("Command recieved: " +inputString); 
+    if(inputString.equalsIgnoreCase("ASET")) 
+    {
+      angleSet();
+    }
+    if(inputString.equalsIgnoreCase("OPEN")) 
+    {
+      openHandInstant();
+    }
+    if(inputString.equalsIgnoreCase("SHUT")) 
+    {
+      shutHandInstant();
+    }
+    else 
+    {
+      Serial.println("Unknown Command. Options: ASET, OPEN, SHUT."); //Handle unknown commands
+    }
+    
+  inputString = ""; // Then we clear the string
 }
+
 
 // This method manually sets the servo angle
 void angleSet() 
@@ -135,27 +134,24 @@ void angleSet()
     
       if (inChar == '\n') // When it's a newline 
       { 
-        stringComplete = true; // Set the flag
         Serial.println("Final string: "); 
         Serial.print(inputString);
       
         inputInt = inputString.toInt();
       
-      if(inputInt > 180 || inputInt < 0)
-      {
-        inputInt = defaultAngle;
-        Serial.println("Value too big. Set to default.");
+        if(inputInt > 180 || inputInt < 0)
+        {
+          inputInt = defaultAngle;
+          Serial.println("Value too big. Set to default.");
+        }
+        handServo.write(inputInt);
+        inputString = "";
+        loop(); // Return to main loop
       }
-      handServo.write(inputInt);
-      inputString = "";
-    }
-    
-      if(stringComplete == false) 
-      {
-        angleSet();
-      }
+      angleSet(); // Recurse.
     }
 }
+
 
  
 // Hand Control Methods:
