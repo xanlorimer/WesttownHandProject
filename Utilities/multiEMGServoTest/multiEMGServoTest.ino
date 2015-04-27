@@ -87,8 +87,7 @@ String getSerial() // Get new serial data if there is any
       inChar = (char)Serial.read(); // Read the character
       inputString += inChar; // Add the character to the string
     }
-    
-    if (inChar == '\n') // Set the flag if the character is a newline 
+    else if (inChar == '\n') // Set the flag if the character is a newline 
     { 
       Serial.println(inputString);
       //commandHandler(inputString);
@@ -105,6 +104,8 @@ void emgCheck()
 {
 // Read EMGs 1 and 2 to determine what to do next.
   emgA = analogRead(0);
+  Serial.print('A');
+  Serial.println(emgA);
     if(emgA > (thresholdA - thresholdModifier))
     {
       for(int i=1; i < emgAvgReadCount; i++)
@@ -117,6 +118,8 @@ void emgCheck()
         emgAvgRead = 0;
     }
   emgB = analogRead(1);
+  Serial.print('B');
+  Serial.println(emgB);
     if(emgB > (thresholdB - thresholdModifier))
     {
       for(int i=1; i < emgAvgReadCount; i++)
@@ -129,6 +132,8 @@ void emgCheck()
         emgAvgRead = 0;
     }
   emgC = analogRead(2); 
+  Serial.print('C');
+  Serial.println(emgC);
     if(emgC > (thresholdC - thresholdModifier))
     {
       for(int i=1; i < emgAvgReadCount; i++)
@@ -148,6 +153,23 @@ void indexPinch()
   openHand();
   servo4.write(shutAngle[4]); 
   servo3.write(shutAngle[3]);
+}
+
+void peaceSign()
+{
+  openHand(); // Open the hand
+  servo0.write(shutAngle[0]); // Clos the pinkie, ring, and thumb
+  servo1.write(shutAngle[1]);
+  servo4.write(shutAngle[4]);  
+}
+
+void rockSign()
+{
+  openHand(); // Open the hand
+  servo1.write(shutAngle[1]); // Shut the ring and middle fingers
+  servo2.write(shutAngle[2]);
+  delay(100); // Wait 100ms
+  servo4.write(shutAngle[4]); // Shut the thumb
 }
 
 // This lets us open the hand easily. Sets all fingers to their respective open angles.
@@ -217,7 +239,7 @@ void pinkieWave()
 // This method is definitely not the best. Doesn't matter too much though, since this is just for testing.
 void fingerControl()
 {
-  Serial.println("Enter the determinant servo value (0-4) and the angle to be written (0-180). Enter 9999 to exit to main loop.");
+  //Serial.println("Enter the determinant servo value (0-4) and the angle to be written (0-180). Enter 9999 to exit to main loop.");
   fingerControlVal = getSerial().toInt(); // Set value to an int
   
   // For each thousand, a different servo is selected. We use the leading digit to determine which servo we're controlling, and the remaining three digits
@@ -227,34 +249,29 @@ void fingerControl()
     fingerControlVal = fingerControlVal - 0;
     servo0.write(fingerControlVal);
   }
-  if(fingerControlVal <= 1180 && fingerControlVal >= 1000)  
+  else if(fingerControlVal <= 1180 && fingerControlVal >= 1000)  
   {
     fingerControlVal = fingerControlVal - 1000;
     servo1.write(fingerControlVal);
   }
-  if(fingerControlVal <= 2180 && fingerControlVal >= 2000) 
+  else if(fingerControlVal <= 2180 && fingerControlVal >= 2000) 
   {
     fingerControlVal = fingerControlVal - 2000;
     servo2.write(fingerControlVal);
   }
-  if(fingerControlVal <= 3180 && fingerControlVal >= 3000)  
+  else if(fingerControlVal <= 3180 && fingerControlVal >= 3000)  
   {
     fingerControlVal = fingerControlVal - 3000;
     servo3.write(fingerControlVal);
   }
-  if(fingerControlVal <= 4180 && fingerControlVal >= 4000)  
+  else if(fingerControlVal <= 4180 && fingerControlVal >= 4000)  
   {
     fingerControlVal = fingerControlVal - 4000;
     servo4.write(fingerControlVal);
   }
-  if(fingerControlVal == 9999)
-  {
-    loop();
-  } 
   else
   {
-    Serial.println("Invalid selection.\n\n\n");
-    fingerControl();
+    loop();
   }
 }
 
@@ -262,6 +279,7 @@ void fingerControl()
 void commandHandler(String command)
 {
   Serial.println("Command recieved: " +inputString); 
+    
     if(inputString.equalsIgnoreCase("DONE")) 
     {
       Serial.println("Line limit reached. Enter text to continue."); // Unknown if this block of code works properly.
@@ -272,38 +290,46 @@ void commandHandler(String command)
       delay(30000); // 30 second delay
       commandHandler("RSTL");
     }
-    if(inputString.equalsIgnoreCase("OPEN")) 
+    else if(inputString.equalsIgnoreCase("OPEN")) 
     {
       //openHandInstant();
     }
-    if(inputString.equalsIgnoreCase("SHUT")) 
+    else if(inputString.equalsIgnoreCase("SHUT")) 
     {
       //shutHandInstant();
     }
-    if(inputString.equalsIgnoreCase("RSTL")) 
+    else if(inputString.equalsIgnoreCase("RSTL")) 
     {
       numberOfLoops = 0; // Reset loops variable
       loop();
     }
-    if(inputString.equalsIgnoreCase("TWAV")) 
+    else if(inputString.equalsIgnoreCase("TWAV")) 
     {
       thumbWave();
     }
-    if(inputString.equalsIgnoreCase("PWAV")) 
+    else if(inputString.equalsIgnoreCase("PWAV")) 
     {
       pinkieWave(); // Okie dokie, loki!
     }
-    if(inputString.equalsIgnoreCase("FING")) 
+    else if(inputString.equalsIgnoreCase("FING")) 
     {
       fingerControl();
     }
-    if(inputString.equalsIgnoreCase("PNCH")) 
+    else if(inputString.equalsIgnoreCase("PNCH")) 
     {
       indexPinch();
     }
-    if(inputString.equalsIgnoreCase("HELP")) 
+    else if(inputString.equalsIgnoreCase("PEAC"))
     {
-      Serial.println("Available: OPEN, SHUT, RSTL, TWAV, PWAV, FING, HELP, PNCH, HELP.");
+      peaceSign();  
+    }
+    else if(inputString.equalsIgnoreCase("ROCK"))
+    {
+      rockSign();  
+    }
+    else if(inputString.equalsIgnoreCase("HELP")) 
+    {
+      Serial.println("Available: OPEN, SHUT, RSTL, TWAV, PWAV, FING, PNCH, HELP.");
       delay(3000);
     }
     else 
@@ -321,11 +347,12 @@ TODO: Add a kill switch or button.
 TODO: Power servos, arduino, and MSK separately. Two 5V lines (a steady one for the Arduino and one for the servos), and a stead 9V for the MSK.
 TODO: Test the indexPinch method - need to know if the fingers close at the same time or if they have some delay.
 TODO: Log serial data to a file through processing. 
-TODO: Add processing comms code (A(n), B(n), C(n))
+TODO: Test processing comms code (A(n), B(n), C(n))
 TODO: Re-evaluate the necessity of having loop(); in certain places.
-TODO: Implement averaging of EMG data
+TODO: Test implementation of EMG data averaging.
 TODO: Basic testing of all methods.
-TODO: Create a list of the methods contained herein.
+TODO: Order more electrodes!
+TODO: Peace sign!
 
 Method list:
 

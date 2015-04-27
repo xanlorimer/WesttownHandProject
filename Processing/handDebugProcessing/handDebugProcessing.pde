@@ -16,17 +16,39 @@
 /*
 A120
 B0
+C4
 A45
 B2
+C21
 A10
 B3
-A1
+C128
 */
 
 import processing.serial.*; 
-import java.util.Scanner; //Import Scanner
+import java.util.Scanner; // So that we can name the file with the date
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.regex.*;
+
+// TEST VARIABLES
+String servoVarSplit = "INIT";
+String fingerCmdVarSplit = "INIT";
+int servoVar;
+int fingerCmdVar;
+int angleVar = 1337;
+
+String test = "INIT"; // TEST STRING, REMOVE LATER.
+int iterator = 0;
+String cmdOut = "INIT";
+// END TEST VARIABLES
+
+  String fileName = new SimpleDateFormat("yyyy-MM-dd-hh-mm'.txt'").format(new Date());
+  PFont font;
+
 
   Serial usbPort; // Initialize the serial port
+  PrintWriter fileWrite;
 
   int intensity = 1; // Amplitude modifier of the graph. Must be scaled *with* thresholds!
   int totalIterations = 0; //How many times has the graph gone through
@@ -43,13 +65,20 @@ import java.util.Scanner; //Import Scanner
   char aValGreater = 'F'; // Is the value GREATER than the threshold or no?
   char bValGreater = 'F'; 
  
+  String cmdString = "";
+  
 // Setup method  
 void setup() 
 {
-  size(1280,400);
+  size(1280,600);
     
   usbPort = new Serial(this, Serial.list()[4], 9600); // New serial port on port 4 @9600bd. Autodetect USB/Ask?
   usbPort.bufferUntil('\n'); // Only buffer until we get a newline character
+  
+  fileWrite = createWriter("emg_data_log_" + fileName);
+  font = createFont("Arial",16,true); // Arial, 16 point, anti-aliasing on
+  textFont(font,14);
+  fill(255);  
   
   background(0); // Black background
 }
@@ -57,13 +86,22 @@ void setup()
 // Draw method
 void draw() 
 {
-  // Unused.
+  // Loop
+  clearText();
+  drawText(iterator);
+  iterator++;
+
+  line(0, 402, 1280, 402);
+  stroke(0);
+
 }
 
 // serialEvent all of the important stuff happens in here.
 void serialEvent(Serial usbPort) 
 {
   String rawStringIn = usbPort.readStringUntil('\n'); // Read serial until newline
+  
+  fileWrite.println(rawStringIn); // Attempt to write the data to the log file.
   
   if(rawStringIn != null) // If the raw input is not null,
   { 
@@ -113,8 +151,6 @@ void serialEvent(Serial usbPort)
         bValIn = float(removeCharAt(rawStringIn,0));
         System.out.println("\n\n\n\n\n\n\n\n\n\nTHRESHOLD 'Z' TRIGGERED!");
         break;
-      
-        
       default:
         System.out.println("ERROR: Unknown sensor ID!!! Check the code!");
         break; // Something else? Error info? Blink LED?
@@ -144,39 +180,40 @@ void serialEvent(Serial usbPort)
     // Connect the dots...
     if (aValInPrevious > aValIn)
       heightModA = (aValInPrevious - aValIn);
-    if (aValInPrevious < aValIn)
+    else if (aValInPrevious < aValIn)
       heightModA = (aValIn - aValInPrevious); 
-    if (aValInPrevious == aValIn)
+    else if (aValInPrevious == aValIn)
       heightModA = 0;
       
     if (bValInPrevious > bValIn)
       heightModB = (bValInPrevious - bValIn);
-    if (bValInPrevious < bValIn)
+    else if (bValInPrevious < bValIn)
       heightModB = (bValIn - bValInPrevious); 
-    if (bValInPrevious == bValIn)
+    else if (bValInPrevious == bValIn)
       heightModB = 0;
 
 
     // Let's draw the lines:
     stroke(255,0,0);
-    line(xPos, height - (intensity * aValIn + heightModA), xPos, height - (intensity * aValIn));
+    line(xPos, ((height - 200) - (intensity * aValIn + heightModA)), xPos, ((height - 200) - (intensity * aValIn)));
     stroke(0,255,0);
-    line(xPos, height - (intensity * bValIn + heightModB), xPos, height - (intensity * bValIn));
+    line(xPos, ((height - 200) - (intensity * bValIn + heightModB)), xPos, ((height - 200) - (intensity * bValIn)));
     
     //stroke(0,0,255); // For a third EMG
     //line(xPos, height - (intensity * cValIn + heightModC), xPos, height - (intensity * cValIn));
     
     // And then let's draw the thresholds:
     stroke(255,0,255);
-    line(xPos, height - (thresholdA - 1), xPos, height - (thresholdA));
+    line(0, thresholdA, 1280, thresholdA);
     stroke(255,0,255);
-    line(xPos, height - (thresholdB - 1), xPos, height - (thresholdB));
+    line(0, thresholdB, 1280, thresholdB);
     
-    // If the graph goes over the edge...  
+    // If the graph goes over the edge, we'll erase the graph portion of everything and start over.  
     if(xPos >= width) 
     {
       xPos = 0;
-      background(0);
+      fill(0);
+      rect(0, 0, 1280, 400);
       totalIterations++;
     }
     else 
@@ -193,3 +230,113 @@ public static String removeCharAt(String s, int pos)
 {
    return s.substring(0,pos)+s.substring(pos+1);
 } 
+
+// KeyPressTest
+void keyPressed() 
+{
+  //println("pressed " + char(key) + " " + keyCode);
+  if(keyCode == 10 || keyCode == 15) // First check if the key was a newline
+  {
+    System.out.println("\n");
+    cmdOut = cmdString; // We do this before so that we don't have to worry about the newline character.
+    commandHandler(cmdOut);
+    cmdOut = "INIT";
+    cmdString = "";
+  }
+  
+  if(!(keyCode == 10) && !(keyCode > 255) && !(keyCode < 0)) // Make sure it's in the ASCII charset and not a newline.
+  {
+    cmdString += key; // If it passes the test, add the key to the cmdString.
+  }
+  System.out.print(key);
+}
+
+
+// TEST METHOD
+void drawText(int iterator)
+{
+    fill(0);
+    text(("Number of Loops: " + iterator),10,420);
+    //delay(1000);
+    text(("2x the number of loops: " + (iterator*2)),10,440);
+}
+// END TEST METHOD
+
+void clearText()
+{
+  fill(255);
+  rect(0, 399, 1280, 600);
+}
+
+void commandHandler(String cmdIn)
+{
+  System.out.println("Command received: " + cmdIn);
+  
+  if(cmdIn.equalsIgnoreCase("init"))
+  {
+    System.out.println("Error! commandHandler was called with the init value!");
+  }
+  else if(cmdIn.equalsIgnoreCase("help"))
+  {
+    System.out.println("Available commands: HELP, OPEN, SHUT, RSTL, TWAV, PWAV, PNCH, FING"); 
+  }
+  else if(cmdIn.equalsIgnoreCase("open"))
+  {
+    System.out.println("Sending OPEN (open hand) instruction...");
+    usbPort.write("OPEN\n"); 
+  }
+  else if(cmdIn.equalsIgnoreCase("shut"))
+  {
+    System.out.println("Sending SHUT (shut hand) instruction..."); 
+    usbPort.write("SHUT\n");
+  }
+  else if(cmdIn.equalsIgnoreCase("rstl"))
+  {
+    System.out.println("Sending RSTL (reset loop count) instruction...");
+    usbPort.write("RSTL\n");
+  }
+  else if(cmdIn.equalsIgnoreCase("twav"))
+  {
+    System.out.println("Sending TWAV (thumb wave) instruction...");
+    usbPort.write("TWAV\n");
+  }
+  else if(cmdIn.equalsIgnoreCase("pwav"))
+  {
+    System.out.println("Sending PWAV (pinkie wave) instruction...");
+    usbPort.write("PWAV\n");
+  }
+  else if(cmdIn.equalsIgnoreCase("pnch"))
+  {
+    System.out.println("Sending PNCH (pinch) instruction...");
+    usbPort.write("PNCH\n");
+  }
+  else if(cmdIn.equalsIgnoreCase("fing") || cmdIn.equalsIgnoreCase("fing [0-9]++"))
+  {
+    System.out.println("Enter 'fing' follwed by the determinant servo value (0-4) (pinkie-thumb), followed by the angle to be written (0-180). e.g. fing 3 132 (132° to servo 3)");
+  }
+  else if(cmdIn.matches("fing [0-9]++ [0-9]++"))
+  {
+    System.out.println(cmdIn);
+    //fingerCmdVar = "";
+    String[] fingerCmdVar = cmdIn.split(" "); //Split cmdIn at the spaces. We don't care about index 0. index 1 is the servo value, while index 2 is the angle value.
+    
+    int servoVar = Integer.parseInt(fingerCmdVar[1]); // Convert servo id to int
+    int angleVar = Integer.parseInt(fingerCmdVar[2]); // Convert angle to int
+
+    if(servoVar > 4 || servoVar < 0 || angleVar > 180 || angleVar < 0)
+    {
+      System.out.println("Invalid angle or servo ID. Syntax is: fing servoID angle");  
+      draw();
+    }
+
+    System.out.println("Writing angle " +angleVar +" to servo " +servoVar +".");
+    usbPort.write("FING"); // Enter FING method
+    delay(10); // Wait a little bit
+    usbPort.write(servoVar +angleVar); // Write servo and angle
+    usbPort.write(9999); // Exit to main loop
+  }
+  else
+  {
+    System.out.println("Unknown command! Type 'help' for a command reference.");  
+  }
+}
