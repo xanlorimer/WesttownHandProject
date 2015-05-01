@@ -26,7 +26,7 @@ int inputInt = 90; // Angle to set on startup. This is reset later on.
 
 // Setup
 void setup() {
-  handServo.attach(9);
+  handServo.attach(3);
   handServo.write(inputInt); // Prevents the servo from eating itself
   Serial.begin(9600);
 }

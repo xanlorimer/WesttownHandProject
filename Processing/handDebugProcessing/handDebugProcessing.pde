@@ -59,8 +59,9 @@ String cmdOut = "INIT";
   
   float thresholdA = 50; // Initialize the thresholds
   float thresholdB = 100;
+  float thresholdC = 25;
   
-  float heightModA,heightModB;
+  float heightModA,heightModB,heightModC;
   
   char aValGreater = 'F'; // Is the value GREATER than the threshold or no?
   char bValGreater = 'F'; 
@@ -71,8 +72,8 @@ String cmdOut = "INIT";
 void setup() 
 {
   size(1280,600);
-    
-  usbPort = new Serial(this, Serial.list()[4], 9600); // New serial port on port 4 @9600bd. Autodetect USB/Ask?
+  //println(Serial.list());
+  usbPort = new Serial(this, Serial.list()[3], 9600); // New serial port on port 4 @9600bd. Autodetect USB/Ask?
   usbPort.bufferUntil('\n'); // Only buffer until we get a newline character
   
   fileWrite = createWriter("emg_data_log_" + fileName);
@@ -133,7 +134,7 @@ void serialEvent(Serial usbPort)
         }
         break;
         
-        
+      /*  
       // A block for testing whether threshold averaging and the like actually works.  
       case 'w': // Threshold triggered. EXPERIMENTAL
         aValIn = float(removeCharAt(rawStringIn,0)); 
@@ -154,7 +155,9 @@ void serialEvent(Serial usbPort)
       default:
         System.out.println("ERROR: Unknown sensor ID!!! Check the code!");
         break; // Something else? Error info? Blink LED?
-    } // End switch
+    } // End switch */
+    
+    }
     
     // This block of code could probably be made more efficient... To do, I guess.
     // This sets the max value that we've seen.
@@ -170,7 +173,7 @@ void serialEvent(Serial usbPort)
       bMax = bValIn;
     }
     
-    // Print some debug info
+    // Print some debug info TODO: Make this displayed on the white part of the window.
       System.out.println("CURR 'B' VALUE:\t" +bValIn); 
       System.out.println("MAX VALUE:\t" +bMax);
     
@@ -199,14 +202,16 @@ void serialEvent(Serial usbPort)
     stroke(0,255,0);
     line(xPos, ((height - 200) - (intensity * bValIn + heightModB)), xPos, ((height - 200) - (intensity * bValIn)));
     
-    //stroke(0,0,255); // For a third EMG
-    //line(xPos, height - (intensity * cValIn + heightModC), xPos, height - (intensity * cValIn));
+    stroke(0,0,255); // For a third EMG
+    line(xPos, ((height - 200) - (intensity * cValIn + heightModC)), xPos, ((height - 200) - (intensity * cValIn)));
     
     // And then let's draw the thresholds:
     stroke(255,0,255);
     line(0, thresholdA, 1280, thresholdA);
     stroke(255,0,255);
     line(0, thresholdB, 1280, thresholdB);
+    stroke(255,255,0);
+    line(0, thresholdC, 1280, thresholdC);
     
     // If the graph goes over the edge, we'll erase the graph portion of everything and start over.  
     if(xPos >= width) 
@@ -259,6 +264,7 @@ void drawText(int iterator)
     text(("Number of Loops: " + iterator),10,420);
     //delay(1000);
     text(("2x the number of loops: " + (iterator*2)),10,440);
+    text("Current Status: Disconnected",10,30);
 }
 // END TEST METHOD
 
@@ -278,12 +284,12 @@ void commandHandler(String cmdIn)
   }
   else if(cmdIn.equalsIgnoreCase("help"))
   {
-    System.out.println("Available commands: HELP, OPEN, SHUT, RSTL, TWAV, PWAV, PNCH, FING"); 
+    System.out.println("Available commands: HELP, OPEN, SHUT, RSTL, TWAV, PWAV, PNCH, FING, PEAC, ROCK, EXIT."); 
   }
   else if(cmdIn.equalsIgnoreCase("open"))
   {
     System.out.println("Sending OPEN (open hand) instruction...");
-    usbPort.write("OPEN\n"); 
+    usbPort.write("xOPEN\n"); 
   }
   else if(cmdIn.equalsIgnoreCase("shut"))
   {
@@ -309,6 +315,21 @@ void commandHandler(String cmdIn)
   {
     System.out.println("Sending PNCH (pinch) instruction...");
     usbPort.write("PNCH\n");
+  }
+  else if(cmdIn.equalsIgnoreCase("rock"))
+  {
+    System.out.println("Sending ROCK (rock symbol) instruction..."); 
+    usbPort.write("ROCK\n");
+  }
+  else if(cmdIn.equalsIgnoreCase("peac"))
+  {
+    System.out.println("Sending PEAC (peace symbol) instruction...");
+    usbPort.write("PEAC\n");
+  }
+  else if(cmdIn.equalsIgnoreCase("exit"))
+  {
+    System.out.println("Exiting...");
+    System.exit(0);
   }
   else if(cmdIn.equalsIgnoreCase("fing") || cmdIn.equalsIgnoreCase("fing [0-9]++"))
   {

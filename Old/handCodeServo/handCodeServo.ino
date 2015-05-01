@@ -21,8 +21,8 @@ int inputInt; // Initialize...
 int analogPort = 0; //Which analog port is the sensor on?
 int loopDelay = 50; // How long to wait during the main loop.
 int readDelay = 500; // How long to wait after servo activation/threshold trigger.
-int openHandAngle = 10; // Default angle value (deg) for the "open" state of the servo.
-int shutHandAngle = 150; // Default angle value (deg) for the "shut" state of the servo.
+int openHandAngle = 180; // Default angle value (deg) for the "open" state of the servo.
+int shutHandAngle = 15; // Default angle value (deg) for the "shut" state of the servo.
 int openHandGradualAngle = 5; // Number of degrees we should turn per loop when gradually opening.
 int shutHandGradualAngle = 5; // Number of degrees we should turn per loop when gradually shutting.
 int threshold = 100; // Intensity before we trigger the servo (threshold)
@@ -39,7 +39,7 @@ Servo handServo; // Single hand servo
 // Setup method
 void setup() 
 {
-  handServo.attach(9); // Attach the servo to serial PWM 9
+  handServo.attach(6); // Attach the servo to serial PWM 9
   handServo.write(defaultAngle); // Set starting angle
   
   Serial.begin(9600); // Initialize a serial connection at 9600bd
@@ -58,9 +58,11 @@ void loop()
     Serial.println(handState);
     
     if(handState) 
-      openHandInstant();
+      Serial.println("Opening!");
+      //openHandInstant();
     if(!handState)
-      shutHandInstant();
+      Serial.println("Closing!");
+      //shutHandInstant();
   }
   
   if(serialDisplay == true) // If we're printing serial data
