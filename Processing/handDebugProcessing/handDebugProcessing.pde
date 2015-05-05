@@ -57,9 +57,9 @@ String cmdOut = "INIT";
   float aValIn,bValIn,cValIn,dValIn = 0; // Init sensor input values
   float aValInPrevious,bValInPrevious,cValInPrevious,dValInPrevious = 0;
   
-  float thresholdA = 50; // Initialize the thresholds
-  float thresholdB = 100;
-  float thresholdC = 25;
+  float thresholdA = 350; // Initialize the thresholds
+  float thresholdB = 300;
+  float thresholdC = 0;
   
   float heightModA,heightModB,heightModC;
   
@@ -294,37 +294,37 @@ void commandHandler(String cmdIn)
   else if(cmdIn.equalsIgnoreCase("shut"))
   {
     System.out.println("Sending SHUT (shut hand) instruction..."); 
-    usbPort.write("SHUT\n");
+    usbPort.write("xSHUT\n");
   }
   else if(cmdIn.equalsIgnoreCase("rstl"))
   {
     System.out.println("Sending RSTL (reset loop count) instruction...");
-    usbPort.write("RSTL\n");
+    usbPort.write("xRSTL\n");
   }
   else if(cmdIn.equalsIgnoreCase("twav"))
   {
     System.out.println("Sending TWAV (thumb wave) instruction...");
-    usbPort.write("TWAV\n");
+    usbPort.write("xTWAV\n");
   }
   else if(cmdIn.equalsIgnoreCase("pwav"))
   {
     System.out.println("Sending PWAV (pinkie wave) instruction...");
-    usbPort.write("PWAV\n");
+    usbPort.write("xPWAV\n");
   }
   else if(cmdIn.equalsIgnoreCase("pnch"))
   {
     System.out.println("Sending PNCH (pinch) instruction...");
-    usbPort.write("PNCH\n");
+    usbPort.write("xPNCH\n");
   }
   else if(cmdIn.equalsIgnoreCase("rock"))
   {
     System.out.println("Sending ROCK (rock symbol) instruction..."); 
-    usbPort.write("ROCK\n");
+    usbPort.write("xROCK\n");
   }
   else if(cmdIn.equalsIgnoreCase("peac"))
   {
     System.out.println("Sending PEAC (peace symbol) instruction...");
-    usbPort.write("PEAC\n");
+    usbPort.write("xPEAC\n");
   }
   else if(cmdIn.equalsIgnoreCase("exit"))
   {

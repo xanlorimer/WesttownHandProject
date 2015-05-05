@@ -3,36 +3,42 @@
 
 // This code is published under the GNU GPL v2 license.
 
-////////////////////////////////////////////////////////////////////////////////////////
-// THIS CODE ISN'T COMPLETELY TESTED AS OF 4/24/15. TESTED TO COMPILATION BUT NO MORE //
-////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////
+// THIS CODE IS TESTED AS OF 5/4/15. //
+///////////////////////////////////////
+
+// EMG averaging has been tested. thresholdModifier and averagerDelay were respectively lowered and raised by 5. As a test, fingerOpenDelay and fingerShutDelay were halved. Neither have been tested.
 
 #include <Servo.h>
 
 boolean flag = true;
+boolean threshFlag = true;
+int capA = 512; // "Out of bounds" value for MSK A
+int capB = 512; // Ditto
+int capC = 512; // Ditto
 
 // As usual, we'll begin by declaring variables
 int loopHaltAmount = 100000; // Number of loops before we stop the test. How many data points do we want to gather?
 int numberOfLoops = 0; // Initialize the number of loops so that we can check for and use a stopping point.
 int loopDelay = 100; // Amount of time (in ms) for the main loop to wait.
-int waveDelay = 100; // Amount of time (in ms) between each finger moving in any wave.
-int fingerOpenDelay = 1000; // Amount of time (in ms) that it takes for the slowest finger to open.
-int fingerShutDelay = 1000; // Amount of time (in ms) that it takes for the slowest finger to shut.
+int waveDelay = 1000; // Amount of time (in ms) between each finger moving in any wave.
+int fingerOpenDelay = 500; // Amount of time (in ms) that it takes for the slowest finger to open.
+int fingerShutDelay = 500; // Amount of time (in ms) that it takes for the slowest finger to shut.
 
 // Stuff for averaging:
 int emgAvgRead; // Just initializing the variable where the average is stored
-int thresholdA = 100; // Threshold for EMG A
-int thresholdB = 40; // Threshold for EMG B
+int thresholdA = 50; // Threshold for EMG A
+int thresholdB = 50; // Threshold for EMG B
 int thresholdC = 30; // Threshold for EMG C
-int averagerDelay = 5; // How long we wait before taking each average point
+int averagerDelay = 10; // How long we wait before taking each average point
 int emgAvgReadCount = 5; // Number of points we collect to take the average
-int thresholdModifier = 10; // Modifier for preliminary threshold activation
+int thresholdModifier = 5; // Modifier for preliminary threshold activation
 
 int fingerControlVal; // Initialze the angle that we'll use for individual finger controls.
 
 int emgA,emgB,emgC; // Where EMG data will be stored
-int shutAngle[] = {5,35,15,15,30};//{30,15,15,35,5}; // Angle when "shut" - From pinkie to thumb.
-int openAngle[] = {160,140,180,180,140};//{140,180,180,140,160}; // Angle when "open" - From pinkie to thumb.
+int shutAngle[] = {35,15,15,40,5}; //{5,35,15,15,30}; // Angle when "shut" - From pinkie to thumb.
+int openAngle[] = {135,180,150,135,160}; //{160,140,180,180,140}; // Angle when "open" - From pinkie to thumb.
 
 char inChar;
 String inputString;
@@ -54,14 +60,15 @@ void setup()
   pinMode(2, INPUT); // Input on analog pin 2
 
   // Declare the servo outputs
-  servo0.attach(3); // Pinkie
-  servo1.attach(5);
+  servo0.attach(10); // Pinkie <3>
+  servo1.attach(9); // <5>
   servo2.attach(6); // ...
-  servo3.attach(9);
-  servo4.attach(10); // Thumb
+  servo3.attach(5); // <9>
+  servo4.attach(3); // Thumb <10>
 
   // Begin the serial connection for debug
   Serial.begin(9600); 
+  openHandInstant();
 }
 
 // Main loop
@@ -120,7 +127,7 @@ void emgCheck()
         //delay(averagerDelay);
         //emgAvgRead = ((emgAvgRead + analogRead(0)) / i);
       //}
-      if(emgA > thresholdA) //(emgAvgRead > thresholdA)
+      if(emgA > thresholdA && emgA < capA) //(emgAvgRead > thresholdA)
       {
         //DO ACTION
         flag = !flag;
@@ -138,20 +145,30 @@ void emgCheck()
         //emgAvgRead = 0;
       }
     //}
-/*  emgB = analogRead(1);
+  emgB = analogRead(1);
   Serial.print('B');
   Serial.println(emgB);
     if(emgB > (thresholdB - thresholdModifier))
     {
+      Serial.println("########## Greater than threshold - thresholdModifier ##########");
       for(int i=1; i < emgAvgReadCount; i++)
       {
+        Serial.print("I IS EQUAL TO: ");
+        Serial.println(i);
         delay(averagerDelay);
-        emgAvgRead = ((emgAvgRead + analogRead(0)) / i);
+        emgAvgRead = ((emgAvgRead + analogRead(1)) / i);
+        Serial.print("EMGAVGREAD: ");
+        Serial.println(emgAvgRead);
       }
-      if(emgAvgRead > thresholdA)
-        //DO ACTION
+      
+      if(emgAvgRead > thresholdB)
+      {
+        Serial.println("Threshold reached over averaging...");
+        rockSign();
         emgAvgRead = 0;
+      }
     }
+    /*
   emgC = analogRead(2); 
   Serial.print('C');
   Serial.println(emgC);
@@ -188,10 +205,10 @@ void peaceSign()
 void rockSign()
 {
   openHandInstant(); // Open the hand
+  servo4.write(shutAngle[4]); // Shut the thumb
+  delay(100);
   servo1.write(shutAngle[1]); // Shut the ring and middle fingers
   servo2.write(shutAngle[2]);
-  delay(500); // Wait 100ms
-  servo4.write(shutAngle[4]); // Shut the thumb
 }
 
 // This lets us open the hand easily. Sets all fingers to their respective open angles.
@@ -248,18 +265,18 @@ void pinkieWave()
   servo0.write(openAngle[0]); // Open first
   delay(waveDelay);
   servo2.write(shutAngle[2]);
-  servo4.write(openAngle[1]);
+  servo1.write(openAngle[1]);
   delay(waveDelay);
   servo3.write(shutAngle[3]);
-  servo4.write(openAngle[2]);
+  servo2.write(openAngle[2]);
   delay(waveDelay);
-  servo3.write(shutAngle[4]);
-  servo4.write(openAngle[3]);
+  servo4.write(shutAngle[4]);
+  servo3.write(openAngle[3]);
   delay(waveDelay);
-  servo3.write(openAngle[4]);  
+  servo4.write(openAngle[4]);  
 }
 
-// This method is definitely not the best. Doesn't matter too much though, since this is just for testing. BROKEN AS OF CMD CHARACTER ADDITION.
+// This method is definitely not the best. Doesn't matter too much though, since this is just for testing. BROKEN AS OF CMD CHARACTER ADDITION. TODO: Rewrite fingerControl method.
 void fingerControl()
 {
   /*
@@ -358,8 +375,25 @@ void commandHandler(String command)
     }
     else if(command.equalsIgnoreCase("HELP")) 
     {
-      Serial.println("Available: OPEN, SHUT, RSTL, TWAV, PWAV, FING, PNCH, HELP.");
+      Serial.println("Available: OPEN, SHUT, RSTL, TWAV, PWAV, FING, PNCH, IDLE, TRSH, HELP.");
       delay(3000);
+    }
+    else if(command.equalsIgnoreCase("IDLE"))
+    {
+      idleFunction();  
+    }
+    else if(command.equalsIgnoreCase("TRSH"))
+    {
+      if(threshFlag)
+      {
+        threshFlag = !threshFlag;
+        thresholdA = 100;  
+      }
+      else if(!threshFlag)
+      {
+        threshFlag = !threshFlag;
+        thresholdA = 50;  
+      }
     }
     else 
     {
@@ -368,20 +402,49 @@ void commandHandler(String command)
   command,inputString = ""; // Then we clear the string
 }
 
+void idleFunction()
+{
+  shutHandInstant();
+  delay(2000);
+  openHandInstant();
+  delay(2000);
+  indexPinch();
+  delay(2000);
+  peaceSign();
+  delay(2000);
+  rockSign();
+  delay(2000);
+  pinkieWave();
+  delay(2000);
+  thumbWave();
+  delay(2000);
+  Serial.println("Idle function end.");
+}
+
+void simpleEMGReadA()
+{
+  Serial.print("A");
+  Serial.println(analogRead(0));
+}
+
+void simpleEMGReadB()
+{
+  Serial.print("B");
+  Serial.println(analogRead(1));
+}
+
+void simpleEMGReadC()
+{
+  Serial.print("C");
+  Serial.println(analogRead(2));  
+}
 
 /*
 Notes:
 
 TODO: Add a kill switch or button.
-TODO: Power servos, arduino, and MSK separately. Two 5V lines (a steady one for the Arduino and one for the servos), and a stead 9V for the MSK.
-TODO: Test the indexPinch method - need to know if the fingers close at the same time or if they have some delay.
-TODO: Log serial data to a file through processing. 
-TODO: Test processing comms code (A(n), B(n), C(n))
-TODO: Re-evaluate the necessity of having loop(); in certain places.
-TODO: Test implementation of EMG data averaging.
-TODO: Basic testing of all methods.
-TODO: Order more electrodes!
-TODO: Peace sign!
+TODO: Set up two 9v voltage regulators and two 5v regulators running off of one supply. 
+TODO: Put in value caps on EMG B and C.
 
 Method list:
 
@@ -396,5 +459,8 @@ thumbWave - finger wave starting with the thumb
 pinkieWave - finger wave starting with the pinkie
 fingerControl - individualized finger control method
 commandHandler - handles all debug commands
+simpleEMGReadA - Prints emg A data
+simpleEMGReadB - Prints emg B data
+simpleEMGReadC - Prints emg C data
 
 */ 
