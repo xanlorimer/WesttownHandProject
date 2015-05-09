@@ -10,9 +10,11 @@
 
 // To do:
 // Implement serial comms TO the arduino, so that we can manually set angles, reset vars, and generally just debug stuff
+// Make it so that we write to the same file based on the date. Right now it overwrites/screws up.
 
 // Expects a serial input FROM the Arduino with "A" or "B" as the sensor ID prepended to each sensor output value.
 // Example output from Arduino:
+
 /*
 A120
 B0
@@ -32,20 +34,20 @@ import java.util.Date;
 import java.util.regex.*;
 
 // TEST VARIABLES
-String servoVarSplit = "INIT";
-String fingerCmdVarSplit = "INIT";
+int R = 255; // Change cleartext method to just use white... or maybe change blue to 255?
+int G = 255;
+int B = 0;
+
 int servoVar;
 int fingerCmdVar;
 int angleVar = 1337;
 
-String test = "INIT"; // TEST STRING, REMOVE LATER.
 int iterator = 0;
 String cmdOut = "INIT";
 // END TEST VARIABLES
 
-  String fileName = new SimpleDateFormat("yyyy-MM-dd-hh-mm'.txt'").format(new Date());
+  String fileName = new SimpleDateFormat("yyyy-MM-dd-hh-mm'.txt'").format(new Date()); // For now...
   PFont font;
-
 
   Serial usbPort; // Initialize the serial port
   PrintWriter fileWrite;
@@ -53,18 +55,15 @@ String cmdOut = "INIT";
   int intensity = 1; // Amplitude modifier of the graph. Must be scaled *with* thresholds!
   int totalIterations = 0; //How many times has the graph gone through
   int xPos = 1; // Horizontal position for the graphs
-  float aMax,bMax,cMax,dMax = 0; // Init maximum values for display purposes
-  float aValIn,bValIn,cValIn,dValIn = 0; // Init sensor input values
-  float aValInPrevious,bValInPrevious,cValInPrevious,dValInPrevious = 0;
+  float aMax,bMax,cMax = 0; // Init maximum values for display purposes
+  float aValIn,bValIn,cValIn = 0; // Init sensor input values
+  float aValInPrevious,bValInPrevious,cValInPrevious = 0;
   
   float thresholdA = 350; // Initialize the thresholds
   float thresholdB = 300;
-  float thresholdC = 0;
+  float thresholdC = 250;
   
-  float heightModA,heightModB,heightModC;
-  
-  char aValGreater = 'F'; // Is the value GREATER than the threshold or no?
-  char bValGreater = 'F'; 
+  float heightModA,heightModB,heightModC; 
  
   String cmdString = "";
   
@@ -77,19 +76,28 @@ void setup()
   usbPort.bufferUntil('\n'); // Only buffer until we get a newline character
   
   fileWrite = createWriter("emg_data_log_" + fileName);
+  
   font = createFont("Arial",16,true); // Arial, 16 point, anti-aliasing on
   textFont(font,14);
   fill(255);  
   
   background(0); // Black background
+  drawThresholds();
+  
+  rect(0, 399, 1280, 600); // Draw info area
 }
 
-// Draw method
+// Draw method (loop)
 void draw() 
 {
-  // Loop
-  clearText();
-  drawText(iterator);
+  clearText(0);
+  drawText(0,iterator*2000);
+  clearText(1);
+  drawText(1,iterator*2000);
+  clearText(2);
+  drawText(2,iterator*2000);
+  clearText(3);
+  drawText(3,iterator);
   iterator++;
 
   line(0, 402, 1280, 402);
@@ -97,12 +105,12 @@ void draw()
 
 }
 
-// serialEvent all of the important stuff happens in here.
+// serialEvent - all of the important stuff happens in here.
 void serialEvent(Serial usbPort) 
 {
   String rawStringIn = usbPort.readStringUntil('\n'); // Read serial until newline
   
-  fileWrite.println(rawStringIn); // Attempt to write the data to the log file.
+  fileWrite.print(rawStringIn); // Attempt to write the data to the log file.
   
   if(rawStringIn != null) // If the raw input is not null,
   { 
@@ -111,76 +119,43 @@ void serialEvent(Serial usbPort)
     // This switch determines what we do with the data that we receive
     switch(rawStringIn.charAt(0)) // Get the determinant character (index: 0)
     { 
-      case 'A': // If the ID is a (sensor A)
-        aValIn = float(removeCharAt(rawStringIn,0));
-        if (aValIn > thresholdA)
-        {
-          aValGreater = 'T';
-        }
-        else
-        {
-          aValGreater = 'F';
-        }
+      case 'A': // If the ID is A (sensor A)
+        aValIn = float(removeCharAt(rawStringIn,0)); // Cast aValIn as a float
         break;
-      case 'B': // If the ID is 2 (sensor B)
+      case 'B': // If the ID is B (sensor B)
         bValIn = float(removeCharAt(rawStringIn,0));
-        if (bValIn > thresholdB)
-        {
-          bValGreater = 'T';
-        }
-        else
-        {
-          bValGreater = 'F';
-        }
         break;
-        
-      /*  
-      // A block for testing whether threshold averaging and the like actually works.  
-      case 'w': // Threshold triggered. EXPERIMENTAL
-        aValIn = float(removeCharAt(rawStringIn,0)); 
-        System.out.println("\n\n\n\n\n\n\n\n\n\nTHRESHOLD 'W' TRIGGERED!");          
-        break;
-      case 'x': // Threshold triggered? EXPERIMENTAL
-        aValIn = float(removeCharAt(rawStringIn,0));
-        System.out.println("\n\n\n\n\n\n\n\n\n\nTHRESHOLD 'X' TRIGGERED!");
-        break;
-      case 'y': // Threshold triggered. EXPERIMENTAL
-        bValIn = float(removeCharAt(rawStringIn,0));
-        System.out.println("\n\n\n\n\n\n\n\n\n\nTHRESHOLD 'Y' TRIGGERED!");
-        break;
-      case 'z': // Threshold triggered. EXPERIMENTAL
-        bValIn = float(removeCharAt(rawStringIn,0));
-        System.out.println("\n\n\n\n\n\n\n\n\n\nTHRESHOLD 'Z' TRIGGERED!");
+      case 'C': // If the ID is C (sensor C)
+        cValIn = float(removeCharAt(rawStringIn,0));
         break;
       default:
-        System.out.println("ERROR: Unknown sensor ID!!! Check the code!");
+        System.out.println("ERROR: Unknown sensor ID! Check the code!");
         break; // Something else? Error info? Blink LED?
-    } // End switch */
+    }    
     
-    }
-    
-    // This block of code could probably be made more efficient... To do, I guess.
-    // This sets the max value that we've seen.
+    // This sets the max value that we've seen:
     if(aValIn >= aMax) 
     {
       aMax = aValIn;
+      clearText(0);
+      drawText(0, aMax);
     }
-      System.out.println("CURR 'A' VALUE:\t" +aValIn);
-      System.out.println("MAX VALUE:\t" +aMax);
     
     if(bValIn >= bMax) 
     {
       bMax = bValIn;
+      clearText(1);
+      drawText(1, bMax);
     }
     
-    // Print some debug info TODO: Make this displayed on the white part of the window.
-      System.out.println("CURR 'B' VALUE:\t" +bValIn); 
-      System.out.println("MAX VALUE:\t" +bMax);
-    
-      System.out.println("\nIterations:\t" +totalIterations);
-      System.out.println("A ACTIVE?: " +aValGreater +"\t" + "B ACTIVE?: " +bValGreater);
+    if(cValIn >= cMax)
+    {
+      cMax = cValIn;
+      clearText(2);
+      drawText(2, cMax);
+    }
 
-    // Connect the dots...
+    // Connect the dots: (Comment out this code to see what I mean.)
     if (aValInPrevious > aValIn)
       heightModA = (aValInPrevious - aValIn);
     else if (aValInPrevious < aValIn)
@@ -194,40 +169,40 @@ void serialEvent(Serial usbPort)
       heightModB = (bValIn - bValInPrevious); 
     else if (bValInPrevious == bValIn)
       heightModB = 0;
-
+      
+    if (cValInPrevious > cValIn)
+      heightModC = (cValInPrevious - cValIn);
+    else if (cValInPrevious < cValIn)
+      heightModC = (cValIn - cValInPrevious); 
+    else if (cValInPrevious == cValIn)
+      heightModB = 0;
 
     // Let's draw the lines:
     stroke(255,0,0);
     line(xPos, ((height - 200) - (intensity * aValIn + heightModA)), xPos, ((height - 200) - (intensity * aValIn)));
     stroke(0,255,0);
     line(xPos, ((height - 200) - (intensity * bValIn + heightModB)), xPos, ((height - 200) - (intensity * bValIn)));
-    
     stroke(0,0,255); // For a third EMG
     line(xPos, ((height - 200) - (intensity * cValIn + heightModC)), xPos, ((height - 200) - (intensity * cValIn)));
-    
-    // And then let's draw the thresholds:
-    stroke(255,0,255);
-    line(0, thresholdA, 1280, thresholdA);
-    stroke(255,0,255);
-    line(0, thresholdB, 1280, thresholdB);
-    stroke(255,255,0);
-    line(0, thresholdC, 1280, thresholdC);
     
     // If the graph goes over the edge, we'll erase the graph portion of everything and start over.  
     if(xPos >= width) 
     {
+      drawThresholds(); // Redraw thresholds
       xPos = 0;
       fill(0);
       rect(0, 0, 1280, 400);
       totalIterations++;
+      clearText(3);
+      drawText(3, totalIterations);
     }
     else 
     {
       xPos++; // Increment x position
-    }
-    
-  } // End if
-} // End serialEvent
+    }    
+  }
+  // Ignore input if null.
+}
     
     
 // To remove a character from a string
@@ -258,22 +233,72 @@ void keyPressed()
 
 
 // TEST METHOD
-void drawText(int iterator)
+void drawText(int instruction, float input)
 {
-    fill(0);
-    text(("Number of Loops: " + iterator),10,420);
-    //delay(1000);
-    text(("2x the number of loops: " + (iterator*2)),10,440);
-    text("Current Status: Disconnected",10,30);
+    fill(0); // Black text
+        
+    switch(instruction)
+    {
+      case 0: // Draw max a value
+        text(("Max A Value: " +input), 10, 420);
+      break;
+      case 1: // Draw max b value
+        text(("Max B Value: " +input), 10, 435);
+      break;
+      case 2: // Draw max c value
+        text(("Max C Value: " +input), 10, 450);
+      break;
+      
+      case 3: // Draw number of iterations
+        text(("Graph Iterations: " +input), 10, 480);
+        break;
+      default:
+      text(("Unknown Instruction."),10,495);
+    }
 }
 // END TEST METHOD
 
-void clearText()
+void drawThresholds() // This method is called both at the beginning and whenever the graph reaches the edge.
 {
-  fill(255);
-  rect(0, 399, 1280, 600);
+    stroke(127,0,0); // Shade of red for A thresh
+    line(0, thresholdA, 1280, thresholdA);
+    stroke(0,127,0); // Shade of green for B thresh
+    line(0, thresholdB, 1280, thresholdB);
+    stroke(0,0,127); // Shade of blue for C thresh
+    line(0, thresholdC, 1280, thresholdC);
 }
 
+void clearText(int instruction)
+{
+  //fill(0);
+  switch(instruction)
+  {
+    case 0:
+    fill(R,G,B);
+    rect(5, 405, 170, 15); // ((xpos1, ypos1),(xposrelative, yposrelative)
+    break;
+    case 1:
+    fill(R,G,B);
+    rect(5, 420, 170, 15); 
+    break;
+    case 2:
+    fill(R,G,B);
+    rect(5, 435, 170, 15);
+    break;
+    case 3:
+    fill(R,G,B);
+    rect(5, 465, 170, 15);
+    break;
+    
+    default:
+    fill(R,G,B);
+    rect(0, 399, 1280, 600);
+    break;
+  }
+  //rect(0, 399, 1280, 600);
+}
+
+// To handle debug commands to the hand
 void commandHandler(String cmdIn)
 {
   System.out.println("Command received: " + cmdIn);

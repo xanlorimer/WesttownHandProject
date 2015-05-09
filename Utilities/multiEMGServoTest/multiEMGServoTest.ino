@@ -3,19 +3,17 @@
 
 // This code is published under the GNU GPL v2 license.
 
-///////////////////////////////////////
-// THIS CODE IS TESTED AS OF 5/4/15. //
-///////////////////////////////////////
-
-// EMG averaging has been tested. thresholdModifier and averagerDelay were respectively lowered and raised by 5. As a test, fingerOpenDelay and fingerShutDelay were halved. Neither have been tested.
+/////////////////////////////////////////////
+// THIS CODE IS FULLY TESTED AS OF 5/9/15. //
+/////////////////////////////////////////////
 
 #include <Servo.h>
 
 boolean flag = true;
 boolean threshFlag = true;
 int capA = 512; // "Out of bounds" value for MSK A
-int capB = 512; // Ditto
-int capC = 512; // Ditto
+int capB = 512; // Ditto, B
+int capC = 512; // Ditto, C
 
 // As usual, we'll begin by declaring variables
 int loopHaltAmount = 100000; // Number of loops before we stop the test. How many data points do we want to gather?
@@ -117,73 +115,70 @@ String getSerial() // Get new serial data if there is any
 void emgCheck()
 {
 // Read EMGs 1 and 2 to determine what to do next.
+      
   emgA = analogRead(0);
   Serial.print('A');
   Serial.println(emgA);
-    //if(emgA > (thresholdA - thresholdModifier))
-    //{
-      //for(int i=1; i < emgAvgReadCount; i++)
-      //{
-        //delay(averagerDelay);
-        //emgAvgRead = ((emgAvgRead + analogRead(0)) / i);
-      //}
-      if(emgA > thresholdA && emgA < capA) //(emgAvgRead > thresholdA)
-      {
-        //DO ACTION
-        flag = !flag;
-        
-        if(flag)
-        {
-          openHandInstant();
-        }
-        
-        else if(!flag)
-        {
-          shutHandInstant();
-        }
-        
-        //emgAvgRead = 0;
-      }
-    //}
-  emgB = analogRead(1);
-  Serial.print('B');
-  Serial.println(emgB);
-    if(emgB > (thresholdB - thresholdModifier))
-    {
-      Serial.println("########## Greater than threshold - thresholdModifier ##########");
-      for(int i=1; i < emgAvgReadCount; i++)
-      {
-        Serial.print("I IS EQUAL TO: ");
-        Serial.println(i);
-        delay(averagerDelay);
-        emgAvgRead = ((emgAvgRead + analogRead(1)) / i);
-        Serial.print("EMGAVGREAD: ");
-        Serial.println(emgAvgRead);
-      }
-      
-      if(emgAvgRead > thresholdB)
-      {
-        Serial.println("Threshold reached over averaging...");
-        rockSign();
-        emgAvgRead = 0;
-      }
-    }
-    /*
-  emgC = analogRead(2); 
-  Serial.print('C');
-  Serial.println(emgC);
-    if(emgC > (thresholdC - thresholdModifier))
+    if(emgA > (thresholdA - thresholdModifier) && emgA < capA) // If emgA is bigger than the threshold but smaller than the cap
     {
       for(int i=1; i < emgAvgReadCount; i++)
       {
         delay(averagerDelay);
         emgAvgRead = ((emgAvgRead + analogRead(0)) / i);
       }
+      
       if(emgAvgRead > thresholdA)
-        //DO ACTION
-        emgAvgRead = 0;
+      {
+        // What do we do?
+        flag = !flag; // Invert the flag
+        
+        if(flag) // If flag is true
+        {
+          openHandInstant(); // Action
+        } 
+        else // Otherwise, if flag is not true (false)
+        {
+          shutHandInstant(); // Action
+        }
+        emgAvgRead = 0; // Reset average value
+      }
     }
-    */
+
+  emgB = analogRead(1);
+  Serial.print('B');
+  Serial.println(emgB);
+    if(emgB > (thresholdB - thresholdModifier) && emgB < capB)
+    {
+      for(int i=1; i < emgAvgReadCount; i++)
+      {
+        delay(averagerDelay);
+        emgAvgRead = ((emgAvgRead + analogRead(1)) / i);
+      }
+      
+      if(emgAvgRead > thresholdB)
+      {
+        rockSign();
+        emgAvgRead = 0;
+      }
+    }
+  
+  emgC = analogRead(2); // Read emgC (on analog port 2)
+  Serial.print('C'); // Print "C" and the emg value for graphing.
+  Serial.println(emgC);
+    if(emgC > (thresholdC - thresholdModifier) && emgC < capC) // If emgC is greater than the threshold but less than the cap,
+    {
+      for(int i=1; i < emgAvgReadCount; i++) // Averager counter
+      {
+        delay(averagerDelay);
+        emgAvgRead = ((emgAvgRead + analogRead(2)) / i);
+      }
+      
+      if(emgAvgRead > thresholdC) // If greater than the threshold
+      {
+        indexPinch(); // Do the action
+        emgAvgRead = 0; // Reset the average read.
+      }
+    }    
 }
 
 // Pinch method
@@ -442,9 +437,8 @@ void simpleEMGReadC()
 /*
 Notes:
 
-TODO: Add a kill switch or button.
-TODO: Set up two 9v voltage regulators and two 5v regulators running off of one supply. 
-TODO: Put in value caps on EMG B and C.
+TODO: Add a kill switch or button. (electronics)
+TODO: Set up two 9v voltage regulators and two 5v regulators running off of one supply. (electronics) 
 
 Method list:
 
@@ -459,6 +453,7 @@ thumbWave - finger wave starting with the thumb
 pinkieWave - finger wave starting with the pinkie
 fingerControl - individualized finger control method
 commandHandler - handles all debug commands
+idleFunction - cycles through hand states
 simpleEMGReadA - Prints emg A data
 simpleEMGReadB - Prints emg B data
 simpleEMGReadC - Prints emg C data
