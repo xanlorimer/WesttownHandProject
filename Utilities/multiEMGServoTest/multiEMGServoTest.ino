@@ -27,8 +27,8 @@ int fingerShutDelay = 500; // Amount of time (in ms) that it takes for the slowe
 int emgAvgRead; // Just initializing the variable where the average is stored
 int thresholdA = 50; // Threshold for EMG A
 int thresholdB = 50; // Threshold for EMG B
-int thresholdC = 30; // Threshold for EMG C
-int averagerDelay = 10; // How long we wait before taking each average point
+int thresholdC = 100; // Threshold for EMG C
+int averagerDelay = 20; // How long we wait before taking each average point
 int emgAvgReadCount = 5; // Number of points we collect to take the average
 int thresholdModifier = 5; // Modifier for preliminary threshold activation
 
@@ -157,8 +157,18 @@ void emgCheck()
       
       if(emgAvgRead > thresholdB)
       {
-        rockSign();
-        emgAvgRead = 0;
+        // What do we do?
+        flag = !flag; // Invert the flag
+        
+        if(flag) // If flag is true
+        {
+          openHandInstant(); // Action
+        } 
+        else // Otherwise, if flag is not true (false)
+        {
+          shutHandInstant(); // Action
+        }
+        emgAvgRead = 0; // Reset average value
       }
     }
   
@@ -175,7 +185,20 @@ void emgCheck()
       
       if(emgAvgRead > thresholdC) // If greater than the threshold
       {
-        indexPinch(); // Do the action
+        // What do we do?
+        flag = !flag; // Invert the flag
+        
+        if(flag) // If flag is true
+        {
+          delay(500);        
+          servo4.write(openAngle[4]);
+        } 
+        else // Otherwise, if flag is not true (false)
+        {
+          delay(500);        
+          servo4.write(shutAngle[4]);  
+        }
+       
         emgAvgRead = 0; // Reset the average read.
       }
     }    

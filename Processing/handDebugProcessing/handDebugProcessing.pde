@@ -6,11 +6,12 @@
 
 // Planned: 
 // Manually input motor values and activate methods
-// Manually reset certain variables (maybe)
+// Manually reset certain variables (maybe).
+//   Like thresholds.
 
 // To do:
-// Implement serial comms TO the arduino, so that we can manually set angles, reset vars, and generally just debug stuff
-// Make it so that we write to the same file based on the date. Right now it overwrites/screws up.
+// Make it so that we write to the same file based on the date. Right now it overwrites/screws up the old file, so I've increased how accurate the filename is in regards to the date.
+// (Higher likelihood that it will create a new file rather than overwriting data)
 
 // Expects a serial input FROM the Arduino with "A" or "B" as the sensor ID prepended to each sensor output value.
 // Example output from Arduino:
@@ -79,30 +80,19 @@ void setup()
   
   font = createFont("Arial",16,true); // Arial, 16 point, anti-aliasing on
   textFont(font,14);
-  fill(255);  
-  
+
   background(0); // Black background
-  drawThresholds();
   
+  fill(255);  
   rect(0, 399, 1280, 600); // Draw info area
+  
+  drawThresholds();
 }
 
 // Draw method (loop)
 void draw() 
 {
-  clearText(0);
-  drawText(0,iterator*2000);
-  clearText(1);
-  drawText(1,iterator*2000);
-  clearText(2);
-  drawText(2,iterator*2000);
-  clearText(3);
-  drawText(3,iterator);
-  iterator++;
-
-  line(0, 402, 1280, 402);
-  stroke(0);
-
+  
 }
 
 // serialEvent - all of the important stuff happens in here.
@@ -188,10 +178,10 @@ void serialEvent(Serial usbPort)
     // If the graph goes over the edge, we'll erase the graph portion of everything and start over.  
     if(xPos >= width) 
     {
-      drawThresholds(); // Redraw thresholds
       xPos = 0;
       fill(0);
       rect(0, 0, 1280, 400);
+      drawThresholds(); // Redraw thresholds
       totalIterations++;
       clearText(3);
       drawText(3, totalIterations);
@@ -266,6 +256,9 @@ void drawThresholds() // This method is called both at the beginning and wheneve
     line(0, thresholdB, 1280, thresholdB);
     stroke(0,0,127); // Shade of blue for C thresh
     line(0, thresholdC, 1280, thresholdC);
+    stroke(0);
+    line(0, 402, 1280, 402); // Draw separator line
+
 }
 
 void clearText(int instruction)
