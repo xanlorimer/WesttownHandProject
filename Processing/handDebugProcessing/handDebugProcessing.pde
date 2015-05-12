@@ -53,16 +53,16 @@ String cmdOut = "INIT";
   Serial usbPort; // Initialize the serial port
   PrintWriter fileWrite;
 
-  int intensity = 1; // Amplitude modifier of the graph. Must be scaled *with* thresholds!
+  int intensity = 1; // Amplitude modifier of the graph. Scaled with thresholds! (Test feature)
   int totalIterations = 0; //How many times has the graph gone through
   int xPos = 1; // Horizontal position for the graphs
   float aMax,bMax,cMax = 0; // Init maximum values for display purposes
   float aValIn,bValIn,cValIn = 0; // Init sensor input values
   float aValInPrevious,bValInPrevious,cValInPrevious = 0;
   
-  float thresholdA = 350; // Initialize the thresholds
-  float thresholdB = 300;
-  float thresholdC = 250;
+  float thresholdA = (350 * intensity); // Initialize the thresholds
+  float thresholdB = (300 * intensity);
+  float thresholdC = (250 * intensity);
   
   float heightModA,heightModB,heightModC; 
  
@@ -146,34 +146,41 @@ void serialEvent(Serial usbPort)
     }
 
     // Connect the dots: (Comment out this code to see what I mean.)
-    if (aValInPrevious > aValIn)
+    if (aValInPrevious > aValIn) 
       heightModA = (aValInPrevious - aValIn);
     else if (aValInPrevious < aValIn)
-      heightModA = (aValIn - aValInPrevious); 
+      heightModA = -(aValIn - aValInPrevious); 
     else if (aValInPrevious == aValIn)
       heightModA = 0;
       
     if (bValInPrevious > bValIn)
       heightModB = (bValInPrevious - bValIn);
     else if (bValInPrevious < bValIn)
-      heightModB = (bValIn - bValInPrevious); 
+      heightModB = -(bValIn - bValInPrevious); 
     else if (bValInPrevious == bValIn)
       heightModB = 0;
       
     if (cValInPrevious > cValIn)
       heightModC = (cValInPrevious - cValIn);
     else if (cValInPrevious < cValIn)
-      heightModC = (cValIn - cValInPrevious); 
+      heightModC = -(cValIn - cValInPrevious); 
     else if (cValInPrevious == cValIn)
-      heightModB = 0;
+      heightModC = 0;
+
 
     // Let's draw the lines:
     stroke(255,0,0);
     line(xPos, ((height - 200) - (intensity * aValIn + heightModA)), xPos, ((height - 200) - (intensity * aValIn)));
-    stroke(0,255,0);
+    
+    stroke(255,255,0);
     line(xPos, ((height - 200) - (intensity * bValIn + heightModB)), xPos, ((height - 200) - (intensity * bValIn)));
+    
     stroke(0,0,255); // For a third EMG
     line(xPos, ((height - 200) - (intensity * cValIn + heightModC)), xPos, ((height - 200) - (intensity * cValIn)));
+    
+    aValInPrevious = aValIn;
+    bValInPrevious = bValIn;
+    cValInPrevious = cValIn;
     
     // If the graph goes over the edge, we'll erase the graph portion of everything and start over.  
     if(xPos >= width) 
@@ -258,7 +265,6 @@ void drawThresholds() // This method is called both at the beginning and wheneve
     line(0, thresholdC, 1280, thresholdC);
     stroke(0);
     line(0, 402, 1280, 402); // Draw separator line
-
 }
 
 void clearText(int instruction)

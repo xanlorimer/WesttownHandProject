@@ -36,7 +36,7 @@ int fingerControlVal; // Initialze the angle that we'll use for individual finge
 
 int emgA,emgB,emgC; // Where EMG data will be stored
 int shutAngle[] = {35,15,15,40,5}; //{5,35,15,15,30}; // Angle when "shut" - From pinkie to thumb.
-int openAngle[] = {135,180,150,135,160}; //{160,140,180,180,140}; // Angle when "open" - From pinkie to thumb.
+int openAngle[] = {135,130,150,135,160}; //{160,140,180,180,140}; // Angle when "open" - From pinkie to thumb.
 
 char inChar;
 String inputString;
