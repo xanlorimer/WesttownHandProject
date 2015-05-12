@@ -3,15 +3,15 @@
 
 // This code is published under the GNU GPL v2 license.
 
-/////////////////////////////////////////////
-// THIS CODE IS FULLY TESTED AS OF 5/9/15. //
-/////////////////////////////////////////////
+//////////////////////////////////////////////
+// THIS CODE IS FULLY TESTED AS OF 5/12/15. //
+//////////////////////////////////////////////
 
 #include <Servo.h>
 
 boolean flag = true;
 boolean threshFlag = true;
-int capA = 512; // "Out of bounds" value for MSK A
+int capA = 512; // "Out of bounds" value for MSK A. 
 int capB = 512; // Ditto, B
 int capC = 512; // Ditto, C
 

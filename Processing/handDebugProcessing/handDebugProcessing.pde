@@ -37,7 +37,7 @@ import java.util.regex.*;
 // TEST VARIABLES
 int R = 255; // Change cleartext method to just use white... or maybe change blue to 255?
 int G = 255;
-int B = 0;
+int B = 255;
 
 int servoVar;
 int fingerCmdVar;
@@ -87,6 +87,7 @@ void setup()
   rect(0, 399, 1280, 600); // Draw info area
   
   drawThresholds();
+  drawText(3, totalIterations);
 }
 
 // Draw method (loop)
@@ -95,7 +96,7 @@ void draw()
   
 }
 
-// serialEvent - all of the important stuff happens in here.
+// serialEvent - all of the important stuff happens in here. (Doing everything in serialEvent is probably not the best practice, but whatever. Todo, eventually.)
 void serialEvent(Serial usbPort) 
 {
   String rawStringIn = usbPort.readStringUntil('\n'); // Read serial until newline
@@ -121,8 +122,8 @@ void serialEvent(Serial usbPort)
       default:
         System.out.println("ERROR: Unknown sensor ID! Check the code!");
         break; // Something else? Error info? Blink LED?
-    }    
-    
+    }   
+        
     // This sets the max value that we've seen:
     if(aValIn >= aMax) 
     {
@@ -175,7 +176,7 @@ void serialEvent(Serial usbPort)
     stroke(255,255,0);
     line(xPos, ((height - 200) - (intensity * bValIn + heightModB)), xPos, ((height - 200) - (intensity * bValIn)));
     
-    stroke(0,0,255); // For a third EMG
+    stroke(0,255,0); // For a third EMG
     line(xPos, ((height - 200) - (intensity * cValIn + heightModC)), xPos, ((height - 200) - (intensity * cValIn)));
     
     aValInPrevious = aValIn;
@@ -187,6 +188,7 @@ void serialEvent(Serial usbPort)
     {
       xPos = 0;
       fill(0);
+      stroke(0);
       rect(0, 0, 1280, 400);
       drawThresholds(); // Redraw thresholds
       totalIterations++;
@@ -249,11 +251,65 @@ void drawText(int instruction, float input)
       case 3: // Draw number of iterations
         text(("Graph Iterations: " +input), 10, 480);
         break;
+        
+      case 4:
+        text(("A Value: " +input), 10, 510);
+        break;
+      case 5:
+        text(("B Value: " +input), 10, 510);
+        break;
+      case 6:
+        text(("C Value: " +input), 10, 510);
+        break;
+        
       default:
       text(("Unknown Instruction."),10,495);
     }
 }
-// END TEST METHOD
+
+void clearText(int instruction)
+{
+  //fill(0);
+  stroke(255);
+  switch(instruction)
+  {
+    case 0:
+      fill(R,G,B);
+      rect(5, 405, 170, 15); // ((xpos1, ypos1),(xposrelative, yposrelative)
+      break;
+    case 1:
+      fill(R,G,B);
+      rect(5, 420, 170, 15); 
+      break;
+    case 2:
+      fill(R,G,B);
+      rect(5, 435, 170, 15);
+      break;
+    case 3:
+      fill(R,G,B);
+      rect(5, 465, 170, 15);
+      break;
+    
+    case 4:
+      fill(R,G,B);
+      rect(5, 495, 170, 15);
+      break;
+    case 5:
+      fill(R,G,B);
+      rect(5, 510, 170, 15);
+      break;
+    case 6:
+      fill(R,G,B);
+      rect(5, 525, 170, 15);
+      break;
+    
+    default:
+      fill(R,G,B);
+      rect(0, 399, 1280, 600);
+      break;
+  }
+  //rect(0, 399, 1280, 600);
+}
 
 void drawThresholds() // This method is called both at the beginning and whenever the graph reaches the edge.
 {
@@ -265,36 +321,6 @@ void drawThresholds() // This method is called both at the beginning and wheneve
     line(0, thresholdC, 1280, thresholdC);
     stroke(0);
     line(0, 402, 1280, 402); // Draw separator line
-}
-
-void clearText(int instruction)
-{
-  //fill(0);
-  switch(instruction)
-  {
-    case 0:
-    fill(R,G,B);
-    rect(5, 405, 170, 15); // ((xpos1, ypos1),(xposrelative, yposrelative)
-    break;
-    case 1:
-    fill(R,G,B);
-    rect(5, 420, 170, 15); 
-    break;
-    case 2:
-    fill(R,G,B);
-    rect(5, 435, 170, 15);
-    break;
-    case 3:
-    fill(R,G,B);
-    rect(5, 465, 170, 15);
-    break;
-    
-    default:
-    fill(R,G,B);
-    rect(0, 399, 1280, 600);
-    break;
-  }
-  //rect(0, 399, 1280, 600);
 }
 
 // To handle debug commands to the hand
@@ -358,6 +384,12 @@ void commandHandler(String cmdIn)
   else if(cmdIn.equalsIgnoreCase("fing") || cmdIn.equalsIgnoreCase("fing [0-9]++"))
   {
     System.out.println("Enter 'fing' follwed by the determinant servo value (0-4) (pinkie-thumb), followed by the angle to be written (0-180). e.g. fing 3 132 (132° to servo 3)");
+  }
+  else if(cmdIn.equalsIgnoreCase("mark"))
+  {
+    stroke(255,0,255);
+    line(xPos, 400, xPos, 0);
+    fileWrite.print("##########BREAK##########");
   }
   else if(cmdIn.matches("fing [0-9]++ [0-9]++"))
   {
