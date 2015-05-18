@@ -36,7 +36,7 @@ import java.util.regex.*;
 
 // TEST VARIABLES
 int R = 255; // Change cleartext method to just use white... or maybe change blue to 255?
-int G = 255;
+int G = 0;
 int B = 255;
 
 int servoVar;
@@ -145,6 +145,15 @@ void serialEvent(Serial usbPort)
       clearText(2);
       drawText(2, cMax);
     }
+    
+    clearText(4);
+    drawText(4, aValIn);
+    
+    clearText(5);
+    drawText(5, bValIn);
+    
+    clearText(6);
+    drawText(6, cValIn);
 
     // Connect the dots: (Comment out this code to see what I mean.)
     if (aValInPrevious > aValIn) 
@@ -256,10 +265,10 @@ void drawText(int instruction, float input)
         text(("A Value: " +input), 10, 510);
         break;
       case 5:
-        text(("B Value: " +input), 10, 510);
+        text(("B Value: " +input), 10, 525);
         break;
       case 6:
-        text(("C Value: " +input), 10, 510);
+        text(("C Value: " +input), 10, 540);
         break;
         
       default:
@@ -389,7 +398,7 @@ void commandHandler(String cmdIn)
   {
     stroke(255,0,255);
     line(xPos, 400, xPos, 0);
-    fileWrite.print("##########BREAK##########");
+    fileWrite.println("#");
   }
   else if(cmdIn.matches("fing [0-9]++ [0-9]++"))
   {
