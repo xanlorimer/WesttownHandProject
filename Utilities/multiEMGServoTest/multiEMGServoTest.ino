@@ -3,9 +3,9 @@
 
 // This code is published under the GNU GPL v2 license.
 
-//////////////////////////////////////////////
-// THIS CODE IS FULLY TESTED AS OF 5/12/15. //
-//////////////////////////////////////////////
+//////////////////////////////////////////////////
+// THIS CODE IS NOT FULLY TESTED AS OF 5/19/15. //
+//////////////////////////////////////////////////
 
 #include <Servo.h>
 #include "Timer.h"
@@ -21,9 +21,9 @@ int capC = 512; // Ditto, C
 int loopHaltAmount = 100000; // Number of loops before we stop the test. How many data points do we want to gather?
 int numberOfLoops = 0; // Initialize the number of loops so that we can check for and use a stopping point.
 int loopDelay = 50; // Amount of time (in ms) for the main loop to wait.
-int waveDelay = 1000; // Amount of time (in ms) between each finger moving in any wave.
-int fingerOpenDelay = 500; // Amount of time (in ms) that it takes for the slowest finger to open.
-int fingerShutDelay = 500; // Amount of time (in ms) that it takes for the slowest finger to shut.
+int waveDelay = 0; // Amount of time (in ms) between each finger moving in any wave.
+int fingerOpenDelay = 0; // Amount of time (in ms) that it takes for the slowest finger to open.
+int fingerShutDelay = 0; // Amount of time (in ms) that it takes for the slowest finger to shut.
 
 // Stuff for averaging:
 int emgAvgRead; // Just initializing the variable where the average is stored
@@ -55,9 +55,7 @@ Timer t;
 
 // Setup method
 void setup()
-{   
-  thresholdSwap(thresholdSwapFlag);
-  
+{     
   // Declare the EMG inputs
   pinMode(0, INPUT); // Input on analog pin 0
   pinMode(1, INPUT); // Input on analog pin 1
@@ -142,10 +140,12 @@ void emgCheck()
         if(flag) // If flag is true
         {
           openHandInstant(); // Action
+          timerSwapWait(1000); // Wait for a second so that we don't have multiple activations.
         } 
         else // Otherwise, if flag is not true (false)
         {
           shutHandInstant(); // Action
+          timerSwapWait(1000);
         }
         emgAvgRead = 0; // Reset average value
       }
@@ -169,11 +169,15 @@ void emgCheck()
         
         if(flag) // If flag is true
         {
-          openHandInstant(); // Action
+          servo0.write(openAngle[0]);
+          servo1.write(openAngle[1]);
+          servo2.write(openAngle[2]);
+          timerSwapWait(1000);
         } 
         else // Otherwise, if flag is not true (false)
         {
           shutHandInstant(); // Action
+          timerSwapWait(1000);
         }
         emgAvgRead = 0; // Reset average value
       }
@@ -198,11 +202,12 @@ void emgCheck()
         if(flag) // If flag is true
         {        
           servo4.write(openAngle[4]);
+          timerSwapWait(1000);
         } 
         else // Otherwise, if flag is not true (false)
         {
-          delay(500);        
-          servo4.write(shutAngle[4]);  
+          servo4.write(shutAngle[4]);
+          timerSwapWait(1000);  
         }
        
         emgAvgRead = 0; // Reset the average read.
@@ -210,27 +215,31 @@ void emgCheck()
     }    
 }
 
-// Pinch method
+// Pinch method (pinches thumb and index finger)
 void indexPinch()
 {
   openHandInstant();
+  
   servo4.write(shutAngle[4]); 
   servo3.write(shutAngle[3]);
 }
 
+// Peace sign! 
 void peaceSign()
 {
   openHandInstant(); // Open the hand
+  
   servo0.write(shutAngle[0]); // Close the pinkie, ring, and thumb
   servo1.write(shutAngle[1]);
   servo4.write(shutAngle[4]);  
 }
 
+// Rock sign! \m/
 void rockSign()
 {
   openHandInstant(); // Open the hand
+  
   servo4.write(shutAngle[4]); // Shut the thumb
-  delay(100);
   servo1.write(shutAngle[1]); // Shut the ring and middle fingers
   servo2.write(shutAngle[2]);
 }
@@ -243,7 +252,6 @@ void openHandInstant()
   servo2.write(openAngle[2]); // ...
   servo3.write(openAngle[3]);
   servo4.write(openAngle[4]); // Thumb
-  delay(fingerOpenDelay); 
 }
 
 // Shuts the hand.
@@ -253,9 +261,7 @@ void shutHandInstant()
   servo1.write(shutAngle[1]);
   servo2.write(shutAngle[2]); // ...
   servo3.write(shutAngle[3]);
-  delay(500); // Might remove this later.
   servo4.write(shutAngle[4]); // Thumb
-  delay(fingerShutDelay);
 }
 
 // Finger "wave" starting with the thumb (Servo 5)
@@ -429,12 +435,12 @@ void commandHandler(String command)
 void idleFunction()
 {
   shutHandInstant();
-  t.after(1500,openHandInstant());
-  t.after(1500,indexPinch());
-  t.after(1500,peaceSign());
-  t.after(1500,rockSign());
-  t.after(1500,pinkieWave());
-  t.after(1500,thumbWave());
+  t.after(1500,openHandInstant);
+  t.after(1500,indexPinch);
+  t.after(1500,peaceSign);
+  t.after(1500,rockSign);
+  t.after(1500,pinkieWave);
+  t.after(1500,thumbWave);
 }
 
 void simpleEMGReadA()
@@ -455,26 +461,28 @@ void simpleEMGReadC()
   Serial.println(analogRead(2));  
 }
 
-void thresholdSwap(boolean thresholdSwapFlag) // To reset the thresholds so that we can have a timed event instead of a delay.
+void thresholdSwap() // To reset the thresholds so that we can have a timed event instead of a delay.
 {
   if(thresholdSwapFlag) // If the flag is true
   {
     thresholdA = thresholdAStore; // Set the three thresholds to their init values
     thresholdB = thresholdBStore;
     thresholdC = thresholdCStore;
+    thresholdSwapFlag = !thresholdSwapFlag; // Invert the flag
   }
   else // If the flag is false
   { 
     thresholdA = 1024; // Set the thresholds to an unreachable value. Sensor range: [0,1023] < 1024
     thresholdB = 1024;
     thresholdC = 1024;
+    thresholdSwapFlag = !thresholdSwapFlag;
   }    
 }
 
 void timerSwapWait(int waitDelay)
 {
-  thresholdSwap(false); // First we swap the thresholds to their higher values (out of range)
-  //t.after(waitDelay,thresholdSwap(true)); // Then after 1000ms (one second) we set them back.
+  thresholdSwap; // First we swap the thresholds to their higher values (out of range)
+  t.after(waitDelay,thresholdSwap); // Then after the wait delay, we set them back.
 }
 
 /*
@@ -482,8 +490,13 @@ Notes:
 
 TODO: Add a kill switch or button. (electronics)
 TODO: Set up two 9v voltage regulators and two 5v regulators running off of one supply. (electronics) 
-TODO: Remove all calls to delay() in favour of a timer. (timer.h?)
-
+TODO: Remove all calls to delay() in favour of a timer. (timer.h?) 
+TODO: (Low priority) remake and test pinkieWave and thumbWave methods with timers.
+TODO: Test how well the timer implementation works.
+TODO: Test idleFunction();
+TODO: Rewrite fingerControl method (broken as of command character addition a few commits back)
+TODO: Test indexPinch, peacesign, and rockSign, all of which call openHandInstant before doing their stuff. Removed the delay calls, so need to implement the delays with timers.
+TODO: Write openHandGraudal and shutHandGradual methods.
 
 Method list:
 
@@ -492,6 +505,8 @@ loop - main loop
 getSerial - gets input from the serial connection
 emgCheck - checks the EMG for threshold triggering
 indexPinch - pinches using index and thumb
+peaceSign - a peace sign. (Or at least an attempt at one...)
+rockSign - a rock sign \m/
 openHand - opens all fingers to their "open" values
 shutHand - shuts all fingers to their "shut" values
 thumbWave - finger wave starting with the thumb
@@ -499,9 +514,10 @@ pinkieWave - finger wave starting with the pinkie
 fingerControl - individualized finger control method
 commandHandler - handles all debug commands
 idleFunction - cycles through hand states
-simpleEMGReadA - Prints emg A data
-simpleEMGReadB - Prints emg B data
-simpleEMGReadC - Prints emg C data
-thresholdSwap - Swaps the thresholds HIGH so that nothing activates (As an alternative to calling delay())
+simpleEMGReadA - prints emg A data
+simpleEMGReadB - prints emg B data
+simpleEMGReadC - prints emg C data
+thresholdSwap - swaps the thresholds HIGH so that nothing activates (As an alternative to calling delay())
+timerSwapWait - waits for int ms.
 
 */ 

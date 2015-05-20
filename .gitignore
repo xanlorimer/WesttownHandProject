@@ -1,0 +1,9 @@
+# LOGGED DATA #
+./Processing/handDebugProcessing/emg_data_log*.txt
+
+# OS GENERATED #
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
