@@ -1,5 +1,5 @@
 # LOGGED DATA #
-./Processing/handDebugProcessing/emg_data_log*.txt
+*.txt
 
 # OS GENERATED #
 .DS_Store
