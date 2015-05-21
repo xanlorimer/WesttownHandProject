@@ -87,7 +87,7 @@ void loop()
       //Serial.flush();
       commandHandler(getSerial()); // Call the command method with whatever's in the serial buffer.
     }
-    
+        
     delay(loopDelay); // And let's have a slight delay so as not to overload the Arduino
 }
 
@@ -172,12 +172,14 @@ void emgCheck()
           servo0.write(openAngle[0]);
           servo1.write(openAngle[1]);
           servo2.write(openAngle[2]);
-          timerSwapWait(1000);
+          timerSwapWait(1000); // Raise the thresholds for a second to prevent additional activations
         } 
         else // Otherwise, if flag is not true (false)
         {
-          shutHandInstant(); // Action
-          timerSwapWait(1000);
+          servo0.write(shutAngle[0]);
+          servo1.write(shutAngle[1]);
+          servo2.write(shutAngle[2]);
+          timerSwapWait(1000); // Raise the thresholds for a second to prevent additional activations
         }
         emgAvgRead = 0; // Reset average value
       }
@@ -439,8 +441,8 @@ void idleFunction()
   t.after(1500,indexPinch);
   t.after(1500,peaceSign);
   t.after(1500,rockSign);
-  t.after(1500,pinkieWave);
-  t.after(1500,thumbWave);
+  //t.after(1500,pinkieWave);
+  //t.after(1500,thumbWave);
 }
 
 void simpleEMGReadA()
@@ -461,28 +463,26 @@ void simpleEMGReadC()
   Serial.println(analogRead(2));  
 }
 
-void thresholdSwap() // To reset the thresholds so that we can have a timed event instead of a delay.
+void thresholdSwapLow() // To reset the thresholds so that we can have a timed event instead of a delay.
 {
-  if(thresholdSwapFlag) // If the flag is true
-  {
     thresholdA = thresholdAStore; // Set the three thresholds to their init values
     thresholdB = thresholdBStore;
     thresholdC = thresholdCStore;
-    thresholdSwapFlag = !thresholdSwapFlag; // Invert the flag
-  }
-  else // If the flag is false
-  { 
+}
+
+void thresholdSwapHigh()
+{
     thresholdA = 1024; // Set the thresholds to an unreachable value. Sensor range: [0,1023] < 1024
     thresholdB = 1024;
     thresholdC = 1024;
-    thresholdSwapFlag = !thresholdSwapFlag;
-  }    
-}
+}    
+
 
 void timerSwapWait(int waitDelay)
 {
-  thresholdSwap; // First we swap the thresholds to their higher values (out of range)
-  t.after(waitDelay,thresholdSwap); // Then after the wait delay, we set them back.
+  thresholdSwapHigh(); // First we swap the thresholds to their higher values (out of range)
+  t.after(waitDelay,thresholdSwapLow); // Then after the wait delay, we set them back.
+  // TODO: Use a flag with this instead?
 }
 
 /*
