@@ -65,6 +65,8 @@ String cmdOut = "INIT";
   float thresholdC = (250 * intensity);
   
   float heightModA,heightModB,heightModC; 
+  
+  int a1,a2,a3,b1,b2,b3,c1,c2,c3; // Don't look at me! (Kludge, fix later.)
  
   String cmdString = "";
   
@@ -111,14 +113,44 @@ void serialEvent(Serial usbPort)
     switch(rawStringIn.charAt(0)) // Get the determinant character (index: 0)
     { 
       case 'A': // If the ID is A (sensor A)
+        a1 = 127; // Set the color
+        a2 = 0;
+        a3 = 0;
         aValIn = float(removeCharAt(rawStringIn,0)); // Cast aValIn as a float
         break;
       case 'B': // If the ID is B (sensor B)
+        b1 = 127; // Set the color
+        b2 = 127;
+        b3 = 0;
         bValIn = float(removeCharAt(rawStringIn,0));
         break;
       case 'C': // If the ID is C (sensor C)
+        a1 = 0; // Set the color
+        a2 = 127;
+        a3 = 0;
         cValIn = float(removeCharAt(rawStringIn,0));
         break;
+        
+      // Code to draw triggered thresholds in a different color
+      case 'a': // Lower case id = triggered threshold
+        a1 = 255; // Set the color
+        a2 = 0;
+        a3 = 0;
+        aValIn = float(removeCharAt(rawStringIn,0)); // Prep the value
+        break;
+      case 'b': // Lower case id = triggered threshold
+        b1 = 255; // Set the color
+        b2 = 255;
+        b3 = 0;
+        bValIn = float(removeCharAt(rawStringIn,0)); // Prep the value
+        break;
+      case 'c': // Lower case id = triggered threshold
+        a1 = 0; // Set the color
+        a2 = 255;
+        a3 = 0;
+        cValIn = float(removeCharAt(rawStringIn,0)); // Prep the value
+        break;
+       
       default:
         System.out.println("ERROR: Unknown sensor ID! Check the code!");
         break; // Something else? Error info? Blink LED?
@@ -179,13 +211,13 @@ void serialEvent(Serial usbPort)
 
 
     // Let's draw the lines:
-    stroke(255,0,0);
+    stroke(a1,a2,a3);
     line(xPos, ((height - 200) - (intensity * aValIn + heightModA)), xPos, ((height - 200) - (intensity * aValIn)));
     
-    stroke(255,255,0);
+    stroke(b1,b2,b3);
     line(xPos, ((height - 200) - (intensity * bValIn + heightModB)), xPos, ((height - 200) - (intensity * bValIn)));
     
-    stroke(0,255,0); // For a third EMG
+    stroke(c1,c2,c3); // For a third EMG
     line(xPos, ((height - 200) - (intensity * cValIn + heightModC)), xPos, ((height - 200) - (intensity * cValIn)));
     
     aValInPrevious = aValIn;
@@ -394,11 +426,13 @@ void commandHandler(String cmdIn)
   {
     System.out.println("Enter 'fing' follwed by the determinant servo value (0-4) (pinkie-thumb), followed by the angle to be written (0-180). e.g. fing 3 132 (132° to servo 3)");
   }
-  else if(cmdIn.equalsIgnoreCase("mark"))
+  else if(cmdIn.matches("mark [a-z].+"))
   {
+    String[] markString = cmdIn.split("mark ");
+    
     stroke(255,0,255);
     line(xPos, 400, xPos, 0);
-    fileWrite.println("#");
+    fileWrite.println("#" +markString[1] +"#\n"); // Prints as "# (markString) #\n" in the file
   }
   else if(cmdIn.matches("fing [0-9]++ [0-9]++"))
   {

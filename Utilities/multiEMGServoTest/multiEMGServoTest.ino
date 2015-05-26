@@ -122,11 +122,19 @@ void emgCheck()
 // Read EMGs 1 and 2 to determine what to do next.
       
   emgA = analogRead(0);
-  Serial.print('A');
+  if(emgA >= thresholdAStore)
+  {
+    Serial.print('a');
+  }
+  else if(emgA < thresholdAStore)
+  {
+    Serial.print('A'); // Print "A" and the emg value for graphing.
+  }
   Serial.println(emgA);
+
     if(emgA > (thresholdA - thresholdModifier) && emgA < capA) // If emgA is bigger than the threshold but smaller than the cap
     {
-      for(int i=1; i < emgAvgReadCount; i++)
+      for(int i=1; i <= emgAvgReadCount; i++)
       {
         delay(averagerDelay);
         emgAvgRead = ((emgAvgRead + analogRead(0)) / i);
@@ -147,16 +155,24 @@ void emgCheck()
           shutHandInstant(); // Action
           timerSwapWait(1000);
         }
-        emgAvgRead = 0; // Reset average value
       }
+      emgAvgRead = 0; // Reset average value
     }
 
   emgB = analogRead(1);
-  Serial.print('B');
+  if(emgB >= thresholdBStore)
+  {
+    Serial.print('b');
+  }
+  else if(emgB < thresholdBStore)
+  {
+    Serial.print('B'); // Print "B" and the emg value for graphing.
+  }
   Serial.println(emgB);
+  
     if(emgB > (thresholdB - thresholdModifier) && emgB < capB)
     {
-      for(int i=1; i < emgAvgReadCount; i++)
+      for(int i=1; i <= emgAvgReadCount; i++)
       {
         delay(averagerDelay);
         emgAvgRead = ((emgAvgRead + analogRead(1)) / i);
@@ -181,16 +197,24 @@ void emgCheck()
           servo2.write(shutAngle[2]);
           timerSwapWait(1000); // Raise the thresholds for a second to prevent additional activations
         }
-        emgAvgRead = 0; // Reset average value
       }
+      emgAvgRead = 0; // Reset average value
     }
   
   emgC = analogRead(2); // Read emgC (on analog port 2)
-  Serial.print('C'); // Print "C" and the emg value for graphing.
+  if(emgC >= thresholdCStore)
+  {
+    Serial.print('c');
+  }
+  else if(emgC < thresholdCStore)
+  {
+    Serial.print('C'); // Print "C" and the emg value for graphing.
+  }
   Serial.println(emgC);
+  
     if(emgC > (thresholdC - thresholdModifier) && emgC < capC) // If emgC is greater than the threshold but less than the cap,
     {
-      for(int i=1; i < emgAvgReadCount; i++) // Averager counter
+      for(int i=1; i <= emgAvgReadCount; i++) // Averager counter
       {
         delay(averagerDelay);
         emgAvgRead = ((emgAvgRead + analogRead(2)) / i);
@@ -211,9 +235,8 @@ void emgCheck()
           servo4.write(shutAngle[4]);
           timerSwapWait(1000);  
         }
-       
-        emgAvgRead = 0; // Reset the average read.
       }
+      emgAvgRead = 0; // Reset the average read.
     }    
 }
 
