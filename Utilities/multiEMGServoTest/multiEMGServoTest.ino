@@ -10,7 +10,9 @@
 #include <Servo.h>
 #include "Timer.h"
 
-boolean flag = true;
+boolean flagA = true;
+boolean flagB = true;
+boolean flagC = true;
 boolean threshFlag = true;
 boolean thresholdSwapFlag = true; // This variable MUST be initialized as TRUE in order for the thresholds to be set during setup(). Used to swap threshold flags.
 int capA = 512; // "Out of bounds" value for MSK A. 
@@ -26,7 +28,7 @@ int fingerOpenDelay = 0; // Amount of time (in ms) that it takes for the slowest
 int fingerShutDelay = 0; // Amount of time (in ms) that it takes for the slowest finger to shut.
 
 // Stuff for averaging:
-int emgAvgRead; // Just initializing the variable where the average is stored
+int emgAvgReadA,emgAvgReadB,emgAvgReadC; // Just initializing the variable where the average is stored
 int thresholdA,thresholdB,thresholdC;
 int thresholdAStore = 50; // Threshold for EMG A
 int thresholdBStore = 50; // Threshold for EMG B
@@ -137,15 +139,15 @@ void emgCheck()
       for(int i=1; i <= emgAvgReadCount; i++)
       {
         delay(averagerDelay);
-        emgAvgRead = ((emgAvgRead + analogRead(0)) / i);
+        emgAvgReadA = (emgAvgReadA + analogRead(0));
       }
       
-      if(emgAvgRead > thresholdA)
+      if((emgAvgReadA / emgAvgReadCount) > thresholdA)
       {
         // What do we do?
-        flag = !flag; // Invert the flag
+        flagA = !flagA; // Invert the flag
         
-        if(flag) // If flag is true
+        if(flagA) // If flag is true
         {
           openHandInstant(); // Action
           timerSwapWait(1000); // Wait for a second so that we don't have multiple activations.
@@ -156,7 +158,7 @@ void emgCheck()
           timerSwapWait(1000);
         }
       }
-      emgAvgRead = 0; // Reset average value
+      emgAvgReadA = 0; // Reset average value
     }
 
   emgB = analogRead(1);
@@ -175,15 +177,15 @@ void emgCheck()
       for(int i=1; i <= emgAvgReadCount; i++)
       {
         delay(averagerDelay);
-        emgAvgRead = ((emgAvgRead + analogRead(1)) / i);
+        emgAvgReadB = (emgAvgReadB + analogRead(1));
       }
       
-      if(emgAvgRead > thresholdB)
+      if((emgAvgReadB / emgAvgReadCount) > thresholdB)
       {
         // What do we do?
-        flag = !flag; // Invert the flag
+        flagB = !flagB; // Invert the flag
         
-        if(flag) // If flag is true
+        if(flagB) // If flag is true
         {
           servo0.write(openAngle[0]);
           servo1.write(openAngle[1]);
@@ -198,7 +200,7 @@ void emgCheck()
           timerSwapWait(1000); // Raise the thresholds for a second to prevent additional activations
         }
       }
-      emgAvgRead = 0; // Reset average value
+      emgAvgReadB = 0; // Reset average value
     }
   
   emgC = analogRead(2); // Read emgC (on analog port 2)
@@ -217,15 +219,15 @@ void emgCheck()
       for(int i=1; i <= emgAvgReadCount; i++) // Averager counter
       {
         delay(averagerDelay);
-        emgAvgRead = ((emgAvgRead + analogRead(2)) / i);
+        emgAvgReadC = (emgAvgReadC + analogRead(2));
       }
       
-      if(emgAvgRead > thresholdC) // If greater than the threshold
+      if((emgAvgReadC / emgAvgReadCount) > thresholdC) // If greater than the threshold
       {
         // What do we do?
-        flag = !flag; // Invert the flag
+        flagC = !flagC; // Invert the flag
         
-        if(flag) // If flag is true
+        if(flagC) // If flag is true
         {        
           servo4.write(openAngle[4]);
           timerSwapWait(1000);
@@ -236,7 +238,7 @@ void emgCheck()
           timerSwapWait(1000);  
         }
       }
-      emgAvgRead = 0; // Reset the average read.
+      emgAvgReadC = 0; // Reset the average read.
     }    
 }
 
@@ -520,6 +522,8 @@ TODO: Test idleFunction();
 TODO: Rewrite fingerControl method (broken as of command character addition a few commits back)
 TODO: Test indexPinch, peacesign, and rockSign, all of which call openHandInstant before doing their stuff. Removed the delay calls, so need to implement the delays with timers.
 TODO: Write openHandGraudal and shutHandGradual methods.
+TODO: Implement commands in a serialEvent instead of the kludginess that we have now.
+TODO: Are there analog events? We should use one so that sensor data is always being sent without delay.
 
 Method list:
 

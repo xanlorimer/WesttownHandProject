@@ -125,9 +125,9 @@ void serialEvent(Serial usbPort)
         bValIn = float(removeCharAt(rawStringIn,0));
         break;
       case 'C': // If the ID is C (sensor C)
-        a1 = 0; // Set the color
-        a2 = 127;
-        a3 = 0;
+        c1 = 0; // Set the color
+        c2 = 127;
+        c3 = 0;
         cValIn = float(removeCharAt(rawStringIn,0));
         break;
         
@@ -145,9 +145,9 @@ void serialEvent(Serial usbPort)
         bValIn = float(removeCharAt(rawStringIn,0)); // Prep the value
         break;
       case 'c': // Lower case id = triggered threshold
-        a1 = 0; // Set the color
-        a2 = 255;
-        a3 = 0;
+        c1 = 0; // Set the color
+        c2 = 255;
+        c3 = 0;
         cValIn = float(removeCharAt(rawStringIn,0)); // Prep the value
         break;
        
