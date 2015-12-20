@@ -7,6 +7,9 @@
 // THIS CODE IS NOT FULLY TESTED AS OF 5/19/15. //
 //////////////////////////////////////////////////
 
+#include <Event.h>
+#include <Timer.h>
+
 #include <Servo.h>
 #include "Timer.h"
 
@@ -20,7 +23,7 @@ int capB = 512; // Ditto, B
 int capC = 512; // Ditto, C
 
 // As usual, we'll begin by declaring variables
-int loopHaltAmount = 100000; // Number of loops before we stop the test. How many data points do we want to gather?
+int loopHaltAmount = 1000; // Number of loops before we stop the test. How many data points do we want to gather?
 int numberOfLoops = 0; // Initialize the number of loops so that we can check for and use a stopping point.
 int loopDelay = 50; // Amount of time (in ms) for the main loop to wait.
 int waveDelay = 0; // Amount of time (in ms) between each finger moving in any wave.
@@ -29,10 +32,13 @@ int fingerShutDelay = 0; // Amount of time (in ms) that it takes for the slowest
 
 // Stuff for averaging:
 int emgAvgReadA,emgAvgReadB,emgAvgReadC; // Just initializing the variable where the average is stored
-int thresholdA,thresholdB,thresholdC;
-int thresholdAStore = 50; // Threshold for EMG A
+// int thresholdA,thresholdB,thresholdC;
+int thresholdAStore = 35; // Threshold for EMG A
+int thresholdA = thresholdAStore;
 int thresholdBStore = 50; // Threshold for EMG B
+int thresholdB = thresholdBStore;
 int thresholdCStore = 100; // Stored threshold for EMG C
+int thresholdC = thresholdCStore;
 int averagerDelay = 20; // How long we wait before taking each average point
 int emgAvgReadCount = 5; // Number of points we collect to take the average
 int thresholdModifier = 5; // Modifier for preliminary threshold activation
@@ -40,8 +46,8 @@ int thresholdModifier = 5; // Modifier for preliminary threshold activation
 int fingerControlVal; // Initialze the angle that we'll use for individual finger controls.
 
 int emgA,emgB,emgC; // Where EMG data will be stored
-int shutAngle[] = {35,15,15,40,5}; //{5,35,15,15,30}; // Angle when "shut" - From pinkie to thumb.
-int openAngle[] = {135,130,150,135,160}; //{160,140,180,180,140}; // Angle when "open" - From pinkie to thumb.
+int shutAngle[] = {35,35,35,35,35}; //{5,35,15,15,30}; // Angle when "shut" - From pinkie to thumb.
+int openAngle[] = {170,170,170,170,170}; //{160,140,180,180,140}; // Angle when "open" - From pinkie to thumb.
 
 char inChar;
 String inputString;
@@ -145,18 +151,24 @@ void emgCheck()
       if((emgAvgReadA / emgAvgReadCount) > thresholdA)
       {
         // What do we do?
-        flagA = !flagA; // Invert the flag
         
-        if(flagA) // If flag is true
-        {
-          openHandInstant(); // Action
-          timerSwapWait(1000); // Wait for a second so that we don't have multiple activations.
-        } 
-        else // Otherwise, if flag is not true (false)
-        {
-          shutHandInstant(); // Action
-          timerSwapWait(1000);
-        }
+        
+        
+          flagA = !flagA; // Invert the flag
+        
+          if(flagA) // If flag is true
+          {
+            openHandInstant(); // Action
+            timerSwapWait(1000); // Wait for a second so that we don't have multiple activations.
+          } 
+          else // Otherwise, if flag is not true (false)
+          {
+            shutHandInstant(); // Action
+            timerSwapWait(1000);
+          }
+
+        
+        
       }
       emgAvgReadA = 0; // Reset average value
     }
