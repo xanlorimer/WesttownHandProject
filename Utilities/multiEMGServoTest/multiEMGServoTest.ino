@@ -1,14 +1,10 @@
-// Code for the upcoming hand test with multiple EMGs and connected servos
-// Written by Xan Lorimer (xanlorimer@gmail.com)
+// Written by Xan Lorimer (xanlorimer@gmail.com) and Tom Barnett (barnett.kthomas@gmail.com)
 
 // This code is published under the GNU GPL v2 license.
 
 //////////////////////////////////////////////////
 // THIS CODE IS NOT FULLY TESTED AS OF 5/19/15. //
 //////////////////////////////////////////////////
-
-#include <Event.h>
-#include <Timer.h>
 
 #include <Servo.h>
 #include "Timer.h"
@@ -18,12 +14,13 @@ boolean flagB = true;
 boolean flagC = true;
 boolean threshFlag = true;
 boolean thresholdSwapFlag = true; // This variable MUST be initialized as TRUE in order for the thresholds to be set during setup(). Used to swap threshold flags.
+boolean overThresh = false; //triggers whenever emg goes over the threshold
 int capA = 512; // "Out of bounds" value for MSK A. 
 int capB = 512; // Ditto, B
 int capC = 512; // Ditto, C
 
 // As usual, we'll begin by declaring variables
-int loopHaltAmount = 1000; // Number of loops before we stop the test. How many data points do we want to gather?
+int loopHaltAmount = 100000; // Number of loops before we stop the test. How many data points do we want to gather?
 int numberOfLoops = 0; // Initialize the number of loops so that we can check for and use a stopping point.
 int loopDelay = 50; // Amount of time (in ms) for the main loop to wait.
 int waveDelay = 0; // Amount of time (in ms) between each finger moving in any wave.
@@ -32,16 +29,16 @@ int fingerShutDelay = 0; // Amount of time (in ms) that it takes for the slowest
 
 // Stuff for averaging:
 int emgAvgReadA,emgAvgReadB,emgAvgReadC; // Just initializing the variable where the average is stored
-// int thresholdA,thresholdB,thresholdC;
-int thresholdAStore = 35; // Threshold for EMG A
-int thresholdA = thresholdAStore;
-int thresholdBStore = 50; // Threshold for EMG B
-int thresholdB = thresholdBStore;
-int thresholdCStore = 100; // Stored threshold for EMG C
-int thresholdC = thresholdCStore;
+int thresholdA = 75;
+int thresholdB = 75;
+int thresholdC = 75;
+int thresholdAStore = 75; // Threshold for EMG A
+int thresholdBStore = 75; // Threshold for EMG B
+int thresholdCStore = 75; // Stored threshold for EMG C
 int averagerDelay = 20; // How long we wait before taking each average point
 int emgAvgReadCount = 5; // Number of points we collect to take the average
 int thresholdModifier = 5; // Modifier for preliminary threshold activation
+int threshlowModifier = 35; //Modifier for lower threshold 
 
 int fingerControlVal; // Initialze the angle that we'll use for individual finger controls.
 
@@ -85,7 +82,7 @@ void setup()
 void loop()
 {
     t.update();
-    
+   
     // Each time we loop, we'll check the EMG values and evaluate them. Based on those values, we can execute an action of some sort.
     emgCheck();
     
@@ -142,36 +139,40 @@ void emgCheck()
 
     if(emgA > (thresholdA - thresholdModifier) && emgA < capA) // If emgA is bigger than the threshold but smaller than the cap
     {
-      for(int i=1; i <= emgAvgReadCount; i++)
+      for(int i=1; i <= emgAvgReadCount; i++) //starts averaging the values 
       {
         delay(averagerDelay);
         emgAvgReadA = (emgAvgReadA + analogRead(0));
       }
       
-      if((emgAvgReadA / emgAvgReadCount) > thresholdA)
+      if((emgAvgReadA / emgAvgReadCount) > thresholdA && overThresh == false) //overThresh is set to false at the beginning
       {
-        // What do we do?
         
+        flagA = !flagA; // Invert the flag--determines if the hand is opened or closed
+        overThresh = true; //tells code that currently over the threshold 
         
-        
-          flagA = !flagA; // Invert the flag
-        
-          if(flagA) // If flag is true
-          {
-            openHandInstant(); // Action
-            timerSwapWait(1000); // Wait for a second so that we don't have multiple activations.
-          } 
-          else // Otherwise, if flag is not true (false)
-          {
-            shutHandInstant(); // Action
-            timerSwapWait(1000);
-          }
 
-        
-        
+        if(flagA) // If flag is true--hand is shut
+        {
+          openHandInstant(); // Action
+          timerSwapWait(1000); // Wait for a second so that we don't have multiple activations.
+        } 
+        else // Otherwise, if flag is not true (false) and the hand is open
+        {
+          shutHandInstant(); // Action
+          timerSwapWait(1000);
+        }
+      
       }
+      
       emgAvgReadA = 0; // Reset average value
+
     }
+
+  if(emgA < (thresholdA - threshlowModifier) && overThresh == true && thresholdA == thresholdAStore) //checks to see if it has gone under the threshold agian, and checks to make sure threshold is normal
+  { 
+        overThresh = false; 
+  }
 
   emgB = analogRead(1);
   if(emgB >= thresholdBStore)
@@ -505,6 +506,7 @@ void thresholdSwapLow() // To reset the thresholds so that we can have a timed e
     thresholdA = thresholdAStore; // Set the three thresholds to their init values
     thresholdB = thresholdBStore;
     thresholdC = thresholdCStore;
+
 }
 
 void thresholdSwapHigh()
@@ -512,6 +514,7 @@ void thresholdSwapHigh()
     thresholdA = 1024; // Set the thresholds to an unreachable value. Sensor range: [0,1023] < 1024
     thresholdB = 1024;
     thresholdC = 1024;
+
 }    
 
 
